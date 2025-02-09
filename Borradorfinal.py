@@ -66,7 +66,7 @@ def load_model():
     return model1, model2
 
 print(type(model1))
-  if hasattr(model1, 'get_params'):
+if hasattr(model1, 'get_params'):
 
 # Mostrar informacion en el dataset
 if st.sidebar.checkbox("Conoce un poco sobre la base de datos"):
