@@ -410,20 +410,20 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
         if st.checkbox("Mostrar hiperparámetros del modelo"):
-        st.write("#### Hiperparámetros del modelo")
-        if st.session_state.model_params is not None:
-            # Estilo HTML para controlar el ancho de las columnas
-            st.markdown(
-                """
-                <style>
-                .dataframe th, .dataframe td {
-                    padding: 10px;
-                    text-align: left;
-                    width: 300px;
-                }
-                </style>
-                """, unsafe_allow_html=True
-            )
+            st.write("#### Hiperparámetros del modelo")
+            if st.session_state.model_params is not None:
+                # Estilo HTML para controlar el ancho de las columnas
+                st.markdown(
+                    """
+                    <style>
+                    .dataframe th, .dataframe td {
+                        padding: 10px;
+                        text-align: left;
+                        width: 300px;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True
+                )
 
             # Mostrar la tabla con estilo CSS para un ancho adecuado
             st.write(st.session_state.model_params.to_html(index=False, escape=False), unsafe_allow_html=True)
