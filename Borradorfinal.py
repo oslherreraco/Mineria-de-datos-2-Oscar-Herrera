@@ -423,12 +423,11 @@ if hasattr(model1, 'get_params'):
 else:
     print("El modelo no tiene el método 'get_params'")
 
-# Cargar y mostrar los hiperparámetros de los modelos
-if st.checkbox("Mostrar hiperparámetros del modelo"):
+# Colocar el checkbox en la barra lateral
+if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
 
     # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
-    print(type(model1))
     if hasattr(model1, 'get_params'):
         st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
 
@@ -448,41 +447,40 @@ if st.checkbox("Mostrar hiperparámetros del modelo"):
         st.dataframe(model1_params_df)
 
     # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
-# Verifica si el modelo tiene el método get_config
-if hasattr(model2, 'get_config'):
-    st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
+    if hasattr(model2, 'get_config'):
+        st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
 
-    # Obtener los hiperparámetros de la red neuronal
-    model2_config = model2.get_config()
+        # Obtener los hiperparámetros de la red neuronal
+        model2_config = model2.get_config()
 
-    # Mostrar la configuración de la red neuronal en un formato legible
-    model2_params = []
-    for layer in model2.layers:
-        layer_info = {
-            "Capa": layer.__class__.__name__,  # Nombre de la capa (ej. Dense, Conv2D)
-            "Hiperparámetros": layer.get_config()  # Obtiene la configuración de la capa
-        }
-        model2_params.append(layer_info)
+        # Mostrar la configuración de la red neuronal en un formato legible
+        model2_params = []
+        for layer in model2.layers:
+            layer_info = {
+                "Capa": layer.__class__.__name__,  # Nombre de la capa (ej. Dense, Conv2D)
+                "Hiperparámetros": layer.get_config()  # Obtiene la configuración de la capa
+            }
+            model2_params.append(layer_info)
 
-    # Mostrar los parámetros del modelo en un DataFrame
-    model2_params_df = pd.DataFrame(model2_params)
-    st.dataframe(model2_params_df)
+        # Mostrar los parámetros del modelo en un DataFrame
+        model2_params_df = pd.DataFrame(model2_params)
+        st.dataframe(model2_params_df)
 
-    # Obtener el learning rate
-    if hasattr(model2, 'optimizer'):
-        optimizer = model2.optimizer
-        if hasattr(optimizer, 'lr'):  # Para versiones más antiguas de Keras
-            learning_rate = optimizer.lr.numpy()
-        elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
-            learning_rate = optimizer.learning_rate.numpy()
+        # Obtener el learning rate
+        if hasattr(model2, 'optimizer'):
+            optimizer = model2.optimizer
+            if hasattr(optimizer, 'lr'):  # Para versiones más antiguas de Keras
+                learning_rate = optimizer.lr.numpy()
+            elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
+                learning_rate = optimizer.learning_rate.numpy()
 
-        st.write(f"##### Learning Rate: {learning_rate}")
+            st.write(f"##### Learning Rate: {learning_rate}")
 
-    # No se puede obtener directamente las épocas o el batch_size, a menos que se haya guardado explícitamente
-    st.write("##### Información adicional:")
-    st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
-else:
-    st.write("El modelo no tiene el método get_config() disponible.")
+        # Información adicional sobre las épocas, batch_size y otros parámetros de entrenamiento
+        st.write("##### Información adicional:")
+        st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
+    else:
+        st.write("El modelo no tiene el método get_config() disponible.")
 
 
 
