@@ -448,7 +448,7 @@ if st.checkbox("Mostrar hiperparámetros del modelo"):
             # Mostrar la tabla con estilo CSS para un ancho adecuado
             st.write(st.session_state.model2_params.to_html(index=False, escape=False), unsafe_allow_html=True)
             
-    if selected_column=='Manual':
+if selected_column=='Manual':
         st.write("")
         
 
