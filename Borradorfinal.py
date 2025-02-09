@@ -67,6 +67,7 @@ def load_model():
 
 
 
+model1, model2 = load_model()
 
 # Mostrar informacion en el dataset
 if st.sidebar.checkbox("Conoce un poco sobre la base de datos"):
