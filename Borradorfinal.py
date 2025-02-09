@@ -458,24 +458,5 @@ if st.checkbox("Mostrar hiperparámetros del modelo"):
         st.dataframe(model2_params_df)
 
 # Continuación del flujo para predicción manual o por defecto
-if selected_column == 'Manual':
-    st.write("### Ingresar datos manualmente para predicción")
-    # Aquí debes agregar los widgets para que el usuario ingrese los datos manualmente.
-    # Dependiendo de los valores que necesitas para la red neuronal, deberías crear inputs para ellos.
-    # Ejemplo:
-    input_data = []
-    input_data.append(st.number_input("Edad", min_value=0))
-    input_data.append(st.number_input("Peso", min_value=0))
-    # Aquí añadir los campos adicionales necesarios para completar las características de entrada de la red neuronal.
 
-    # Cuando se ingresen los datos, puedes hacer la predicción de la siguiente manera:
-    if st.button("Realizar Predicción"):
-        input_data = np.array(input_data).reshape(1, -1)
-        prediction = model2.predict(input_data)
-        st.write("Predicción de la red neuronal:", prediction)
-
-
-            
-if selected_column=='Manual':
-        st.write("")
 
