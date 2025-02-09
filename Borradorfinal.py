@@ -1,531 +1,148 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import pickle
-import gzip
+from openpyxl import load_workbook
 
-# Cargar el modelo entrenado
-def load_model():
-    """Cargar el modelo desde los archivos comprimidos."""
-    with gzip.open('model_trained_regressor.pkl.gz', 'rb') as f:
-        model = pickle.load(f)
-    return model
+# Función para cargar el archivo Excel y asignar los datos a las variables
+def cargar_datos_excel(file_path):
+    try:
+        # Cargar el archivo Excel
+        df = pd.read_excel(file_path)
+        return df
+    except FileNotFoundError:
+        # Si el archivo no existe, devolvemos un DataFrame vacío
+        st.error("El archivo de Excel no fue encontrado.")
+        return pd.DataFrame()
 
-# Definir las opciones para las variables categóricas (si es necesario)
-sex_options = [0, 1]  # 0: Femenino, 1: Masculino
-smoker_options = ['No', 'Yes']  # Opción para fumar
-dm_options = ['No', 'Yes']  # Diabetes
-htn_options = ['No', 'Yes']  # Hipertensión
-# Puedes continuar añadiendo opciones similares para otras variables categóricas
+# Función para guardar los datos modificados en el archivo Excel
+def guardar_datos_excel(file_path, df):
+    df.to_excel(file_path, index=False)
+    st.success("¡Datos guardados correctamente en el archivo Excel!")
 
-# Variables de ejemplo para el formulario
-columns = [
-    "Age", "Weight", "Length", "Sex", "BMI", "DM", "HTN", "Current Smoker", 
-    "EX-Smoker", "FH", "Obesity", "CRF", "CVA", "Airway disease", "Thyroid Disease",
-    "CHF", "DLP", "BP", "PR", "Edema", "Weak Peripheral Pulse", "Lung rales", 
-    "Systolic Murmur", "Diastolic Murmur", "Typical Chest Pain", "Dyspnea", 
-    "Function Class", "Atypical", "Nonanginal", "Exertional CP", "LowTH Ang", 
-    "Q Wave", "St Elevation", "St Depression", "Tinversion", "LVH", 
-    "Poor R Progression", "BBB", "FBS", "CR", "TG", "LDL", "HDL", "BUN", 
-    "ESR", "HB", "K", "Na", "WBC", "Lymph", "Neut", "PLT", "EF-TTE", 
-    "Region RWMA", "VHD", "Cath"
-]  # Esta lista contiene todas las variables de tu conjunto de datos.
+# Título de la app
+st.title("Formulario de Ingreso de Datos")
 
-# Cargar el modelo una sola vez al principio
-model = load_model()
+# Opción para elegir el tipo de ingreso de datos
+opcion = st.selectbox("Selecciona una opción para el ingreso de datos", ["Ingreso manual", "Cargar desde Excel"])
 
-# Título de la aplicación
-st.title('Predicción de datos médicos')
+# Variable para almacenar el DataFrame de los datos
+df = pd.DataFrame()
 
-# Selección entre cargar archivo o ingresar datos manualmente
-input_method = st.radio("¿Cómo deseas ingresar los datos?", 
-                        options=["Ingresar datos manualmente", "Cargar archivo Excel"])
+# Si se selecciona la opción de "Cargar desde Excel"
+if opcion == "Cargar desde Excel":
+    # Cargar el archivo Excel
+    file_path = "datos_formulario.xlsx"
+    df = cargar_datos_excel(file_path)
 
-# Si el usuario elige "Ingresar datos manualmente"
-if input_method == "Ingresar datos manualmente":
-    # Crear un diccionario para los datos de entrada
-    input_data = {}
-
-    # Dividir las variables en filas, asignando 3 columnas por fila
-    for i in range(0, len(columns), 3):
-        cols = st.columns(3)
+    # Verifica si hay datos en el archivo
+    if not df.empty:
+        # Si hay datos en el archivo, usar la primera fila para el formulario
+        row = df.iloc[0]
         
-        for j, col in enumerate(columns[i:i+3]):
-            # Determinar el tipo de entrada según el tipo de variable
-            if col == "Sex":  # Variable categórica con dos opciones
-                input_value = cols[j].selectbox(
-                    f"Ingrese el valor para {col} (1: Masculino, 0: Femenino)", 
-                    options=sex_options
-                )
-            elif col == "Current Smoker" or col == "DM" or col == "HTN":  # Variables categóricas
-                input_value = cols[j].selectbox(
-                    f"Ingrese el valor para {col} (No, Yes)", 
-                    options=smoker_options if col == "Current Smoker" else dm_options
-                )
-            elif col == "BMI" or col == "Age" or col == "Weight" or col == "Length":  # Variables numéricas
-                input_value = cols[j].number_input(
-                    f"Ingrese el valor para {col}",
-                    min_value=0.0,
-                    step=0.1,
-                    value=float(st.session_state.get(f'input_{col}', 0.0))
-                )
-            else:  # Para otras variables, usamos selectbox o number_input
-                input_value = cols[j].text_input(
-                    f"Ingrese el valor para {col}",
-                    value=str(st.session_state.get(f'input_{col}', ''))
-                )
+        # Campos del formulario
+        st.subheader("Datos Demográficos")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            age = st.number_input("Edad", min_value=0, value=row['Edad'] if 'Edad' in row else 30)
+        with col2:
+            weight = st.number_input("Peso (kg)", min_value=0.0, value=row['Peso'] if 'Peso' in row else 70.0)
+        with col3:
+            length = st.number_input("Altura (cm)", min_value=0, value=row['Altura'] if 'Altura' in row else 170)
 
-            # Guardamos el valor en session_state
-            st.session_state[f'input_{col}'] = input_value
-            input_data[col] = input_value  # Guardar el valor en el diccionario de entrada
+        sex = st.selectbox("Sexo", options=["Masculino", "Femenino"], index=["Masculino", "Femenino"].index(row['Sexo']) if 'Sexo' in row else 0)
 
-    # Botón para predecir el valor basado en los datos ingresados
-    if st.button("Predecir"):
-        input_array = np.array([list(input_data.values())])
-        prediction = model.predict(input_array)
-        st.write(f"### El valor estimado es: {prediction[0]:,.4f}")
+        # Sección 2: Información Médica
+        st.subheader("Información Médica")
+        diabetes = st.selectbox("¿Tienes Diabetes?", options=["Sí", "No"], index=["Sí", "No"].index(row['Diabetes']) if 'Diabetes' in row else 0)
+        hypertension = st.selectbox("¿Tienes Hipertensión?", options=["Sí", "No"], index=["Sí", "No"].index(row['Hipertensión']) if 'Hipertensión' in row else 0)
+        smoker = st.selectbox("¿Eres fumador?", options=["Sí", "No"], index=["Sí", "No"].index(row['Fumador']) if 'Fumador' in row else 0)
 
-# Si el usuario elige "Cargar archivo Excel"
-elif input_method == "Cargar archivo Excel":
-    uploaded_file = st.file_uploader("Cargar archivo Excel", type="xlsx")
-    if uploaded_file is not None:
-        try:
-            # Leer el archivo Excel
-            data = pd.read_excel(uploaded_file)
-            
-            # Verificar si las columnas necesarias están presentes en el archivo
-            if all(col in data.columns for col in columns):
-                st.write("Datos cargados correctamente:")
-                st.write(data)
+        # Sección 3: Síntomas y Examen Físico
+        st.subheader("Síntomas y Examen Físico")
+        chest_pain = st.selectbox("¿Dolor en el pecho?", options=["Sí", "No"], index=["Sí", "No"].index(row['Dolor en el pecho']) if 'Dolor en el pecho' in row else 0)
+        shortness_breath = st.selectbox("¿Dificultad para respirar?", options=["Sí", "No"], index=["Sí", "No"].index(row['Dificultad para respirar']) if 'Dificultad para respirar' in row else 0)
 
-                # Realizamos la predicción con los datos cargados
-                input_data_from_file = data[columns].values
-                prediction = model.predict(input_data_from_file)
-                st.write(f"### El valor estimado es: {prediction}")
-            else:
-                st.error(f"El archivo Excel debe contener las siguientes columnas: {', '.join(columns)}")
-        except Exception as e:
-            st.error(f"Error al procesar el archivo: {str(e)}")
+        # Sección 4: Resultados de Laboratorio
+        st.subheader("Resultados de Laboratorio")
+        glucose = st.number_input("Glucosa en ayunas (mg/dL)", min_value=0.0, value=row['Glucosa en ayunas'] if 'Glucosa en ayunas' in row else 0.0)
+        creatinine = st.number_input("Creatinina (mg/dL)", min_value=0.0, value=row['Creatinina'] if 'Creatinina' in row else 0.0)
+        lipids = st.number_input("Lípidos totales (mg/dL)", min_value=0.0, value=row['Lípidos totales'] if 'Lípidos totales' in row else 0.0)
 
-model1, model2 = load_model()
+        # Sección 5: Resultados ECG y Ecocardiografía
+        st.subheader("Resultados ECG y Ecocardiografía")
+        ejection_fraction = st.number_input("Fracción de eyección (%)", min_value=0.0, value=row['Fracción de eyección'] if 'Fracción de eyección' in row else 0.0)
+        ecg_abnormalities = st.selectbox("¿Anomalías en ECG?", options=["Sí", "No"], index=["Sí", "No"].index(row['Anomalías ECG']) if 'Anomalías ECG' in row else 0)
 
+        # Botón para guardar los datos modificados
+        if st.button("Guardar cambios en Excel"):
+            # Actualizar el DataFrame con los nuevos valores
+            df.loc[0, 'Edad'] = age
+            df.loc[0, 'Peso'] = weight
+            df.loc[0, 'Altura'] = length
+            df.loc[0, 'Sexo'] = sex
+            df.loc[0, 'Diabetes'] = diabetes
+            df.loc[0, 'Hipertensión'] = hypertension
+            df.loc[0, 'Fumador'] = smoker
+            df.loc[0, 'Dolor en el pecho'] = chest_pain
+            df.loc[0, 'Dificultad para respirar'] = shortness_breath
+            df.loc[0, 'Glucosa en ayunas'] = glucose
+            df.loc[0, 'Creatinina'] = creatinine
+            df.loc[0, 'Lípidos totales'] = lipids
+            df.loc[0, 'Fracción de eyección'] = ejection_fraction
+            df.loc[0, 'Anomalías ECG'] = ecg_abnormalities
 
+            # Guardar el archivo de Excel con los datos actualizados
+            guardar_datos_excel(file_path, df)
 
-# Mostrar informacion en el dataset
-if st.sidebar.checkbox("Conoce un poco sobre la base de datos"):
-    
-    st.title("Descripción de la base de datos **Z-Alizadeh Sani**")
-    
-    st.markdown("""
-    La base de datos **Z-Alizadeh Sani** contiene información médica de pacientes cardíacos y está estructurada en cuatro categorías principales:
-    """)
-    
-    # Demográficos
-    st.subheader("1. Demográficos")
-    st.markdown("""
-    - **Edad:** 30-86 años.
-    - **Peso:** 48-120 kg.
-    - **Altura:** 140-188 cm.
-    - **Sexo:** M (Masculino), F (Femenino).
-    - **Índice de Masa Corporal (BMI):** 18-41.
-    - **Historial médico:** Diabetes Mellitus (DM), Hipertensión (HTN), fumador actual/ex-fumador, historial familiar (FH), obesidad, insuficiencia renal crónica (CRF), enfermedad pulmonar, etc.
-    """)
-    
-    # Síntomas y Examen Físico
-    st.subheader("2. Síntomas y Examen Físico")
-    st.markdown("""
-    - **Presión Arterial (BP):** 90-190 mmHg.
-    - **Pulso (PR):** 50-110 ppm.
-    - **Síntomas cardíacos:** Edema, dolor torácico, disnea, soplos sistólicos y diastólicos.
-    - **Clase funcional:** Valores del 1 al 4.
-    """)
-    
-    # ECG
-    st.subheader("3. ECG")
-    st.markdown("""
-    - **Anomalías observadas:** Elevación del ST, inversión de T, hipertrofia ventricular izquierda (LVH), etc.
-    """)
-    
-    # Laboratorio y Ecocardiografía
-    st.subheader("4. Laboratorio y Ecocardiografía")
-    st.markdown("""
-    - **Pruebas de laboratorio:**
-      - Glucosa en ayunas (FBS): 62-400 mg/dl.
-      - Creatinina (Cr): 0.5-2.2 mg/dl.
-      - Lípidos (LDL, HDL, TG).
-      - Otros valores como hemoglobina, potasio, sodio, leucocitos, etc.
-    - **Ecocardiografía:**
-      - Fracción de eyección (EF-TTE): 15-60%.
-      - Anormalidades del movimiento regional de la pared (RWMA).
-    """)
-
-
-# Mostrar las primeras filas dinámicamente
-if st.sidebar.checkbox("Mostrar primeras filas"):
-    n_rows = st.sidebar.slider("Número de filas a mostrar:", 1, 50, 5)
-    st.write(f"### Primeras {n_rows} filas del dataset")
-    st.write(heartdisease.head(n_rows))
-
-
-# Mostrar información del dataset
-import io
-if st.sidebar.checkbox("Mostrar información del dataset"):
-    st.write("### Información del dataset")
-
-    # Capturar la salida de info() en un buffer
-    buffer = io.StringIO()
-    heartdisease.info(buf=buffer)
-    
-    # Procesar la salida para estructurarla mejor
-    info_text = buffer.getvalue().split("\n")  # Dividir en líneas
-    info_text = [line.strip() for line in info_text if line.strip()]  # Quitar espacios vacíos
-    
-    # Extraer información clave
-    filas_columnas = info_text[0]  # Primera línea con shape
-    columnas_info = info_text[3:]  # A partir de la cuarta línea están las columnas
-
-    # Mostrar filas y columnas
-    st.write(f"**{filas_columnas}**")
-
-    # Convertir la información de columnas en un DataFrame
-    column_data = []
-    for line in columnas_info:
-        parts = line.split()  # Separar por espacios
-        if len(parts) >= 3:
-            column_name = parts[1]  # Nombre de la columna
-            non_null_count = parts[2]  # Cantidad de valores no nulos
-            dtype = parts[-1]  # Tipo de dato
-            column_data.append([column_name, non_null_count, dtype])
-
-    df_info = pd.DataFrame(column_data, columns=["Columna", "No Nulos", "Tipo de Dato"]).iloc[2:]
-    memory_values = df_info.iloc[-1].values
-    memorie_use = " ".join(str(value) for value in memory_values)
-    # Mostrar la tabla en Streamlit
-    st.dataframe(df_info.iloc[:-2])
-    st.write(f"Uso en memoria {memorie_use}")
-
-# Estadísticas descriptivas
-if st.sidebar.checkbox("Mostrar estadísticas descriptivas"):
-    st.write("### Estadísticas descriptivas")
-    st.write(heartdisease.describe())
-    
-# Datos faltantes
-if st.sidebar.checkbox("Mostrar datos faltantes"):
-    st.write("### Datos faltantes por columna")
-    selected_column = st.selectbox("Selecciona una columna para ver los datos faltantes:", heartdisease.columns)
-
-    # Calcular datos faltantes
-    missing_values = heartdisease[selected_column].isnull().sum()
-    total_values = len(heartdisease[selected_column])
-    missing_percentage = (missing_values / total_values) * 100
-
-    # Mostrar resultado
-    st.write(f"### Información de la columna: {selected_column}")
-    st.write(f"- **Valores totales:** {total_values}")
-    st.write(f"- **Valores faltantes:** {missing_values} ({missing_percentage:.2f}%)")
-    
-    if st.button("Mostrar todos los valores faltantes"):
-        missing_total = heartdisease.isnull().sum()
-        missing_total_df = pd.DataFrame({"Columna": missing_total.index, "Valores Faltantes": missing_total.values})
-        
-        # Filtrar solo las columnas con valores faltantes
-        missing_total_df = missing_total_df[missing_total_df["Valores Faltantes"] > 0]
-        st.write(missing_total_df)
-
-#Frecuencia Columnas
-if st.sidebar.checkbox("Frecuencia columnas"):
-    st.write("### Frecuencia por columna")
-    columna_seleccionada = st.selectbox("Selecciona una columna para ver su frecuencia:", heartdisease.columns)
-    st.write(heartdisease[columna_seleccionada].value_counts())
-    if st.button("Mostrar valor más frecuente"):
-        st.write(heartdisease[columna_seleccionada].mode()[0])
-
-#Informacion por paciente
-if st.sidebar.checkbox("Información paciente"):
-    st.write("### Informacion por paciente")
-    row_index = st.number_input("Ingresa el índice de la fila a visualizar:", min_value=0, max_value=len(heartdisease)-1, step=1)
-
-    if st.button("Mostrar fila seleccionada"):
-        st.write(f"### Datos de la fila {row_index}")
-        st.dataframe(heartdisease.iloc[[row_index]].iloc[:, 1:])
-
-#Matriz de correlacion
-if st.sidebar.checkbox("Matriz de correlacion"):
-    st.write("### Matriz de correlacion")
-    # Filtrar solo las columnas numéricas
-    heartdisease_num = heartdisease.select_dtypes(include=['float64', 'int64'])
-    variables_objetivo = ['Age','Weight','Length', 'BMI', 'BP','PR','FBS','CR','TG','LDL','HDL','BUN','ESR','HB','K','Na','WBC','Lymph','Neut','PLT','EF-TTE']
-    # Calcular la matriz de correlación
-    correlacion = heartdisease_num[variables_objetivo].corr()
-    # Create a mask using numpy's triu function
-    mask = np.triu(np.ones_like(correlacion, dtype=bool))
-    # Configuración de la gráfica
-    # Create a masked heatmap
-    plt.figure(figsize = (10,8))
-    plt.rcParams.update({'font.size': 12})
-    sns.heatmap(correlacion, cmap = 'coolwarm', annot_kws={"size": 7},vmin = -1, vmax = 1, center = 0, annot=True, fmt=".2f", square=True, linewidths=.5, mask = mask)
-    plt.show()
-
-    #plt.figure(figsize=(10, 8))  # Tamaño de la figura
-    #sns.heatmap(correlacion, annot=True, cmap='coolwarm', fmt='.2f', cbar=True, square=True)
-    
-    # Título de la gráfica
-    plt.title('Matriz de Correlación de Heart Disease')
-    
-    # Mostrar la gráfica en Streamlit
-    st.pyplot(plt)
-
-# Sección para gráficos dinámicos
-if st.sidebar.checkbox("Gráficos dinámicos"):
-
-    # Selección de variables para el gráfico
-    x_var = st.sidebar.selectbox("Selecciona la variable X:", heartdisease.columns)
-    y_var = st.sidebar.selectbox("Selecciona la variable Y:", heartdisease.columns)
-    
-    # Tipo de gráfico
-    chart_type = st.sidebar.radio(
-        "Selecciona el tipo de gráfico:",
-        ("Dispersión", "Histograma", "Boxplot")
-    )
-    
-    # Mostrar el gráfico
-    st.write("### Gráficos")
-    if chart_type == "Dispersión":
-        st.write(f"#### Gráfico de dispersión: {x_var} vs {y_var}")
-        fig, ax = plt.subplots()
-        sns.scatterplot(data=heartdisease, x=x_var, y=y_var, ax=ax)
-        st.pyplot(fig)
-    elif chart_type == "Histograma":
-        st.write(f"#### Histograma de {x_var}")
-        fig, ax = plt.subplots()
-        sns.histplot(heartdisease[x_var], bins=30, kde=True, ax=ax)
-        st.pyplot(fig)
-    elif chart_type == "Boxplot":
-        st.write(f"#### Boxplot de {y_var} por {x_var}")
-        fig, ax = plt.subplots()
-        sns.boxplot(data=heartdisease, x=x_var, y=y_var, ax=ax)
-        st.pyplot(fig)
-
-st.sidebar.header("Transformacion datos")
-# Copiar el DataFrame para evitar modificar el original
-if 'heartdisease_copy' not in st.session_state:
-    st.session_state.heartdisease_copy = heartdisease.copy()
-
-if st.sidebar.checkbox("Datos categoricos"):
-    # Estrategias de codificación disponibles
-    estrategias2 = ['Ordinal Encoder', 'OneHot Encoder']
-    
-    # Crear un selectbox para seleccionar la estrategia de codificación
-    strategy2 = st.selectbox('Selecciona una estrategia de codificación:', estrategias2, index=0)
-    
-    # Función para aplicar la codificación
-    def apply_encoding(data, strategy):
-        categorical_cols = data.select_dtypes(exclude=['int64', 'float64']).columns
-        st.write(f'{categorical_cols}')
-        st.write(f'{len(categorical_cols)}')
-        if len(categorical_cols) == 0:
-            st.warning("No hay columnas categóricas en los datos.")
-            return data
-    
-        data_copy = data.copy()
-    
-        if strategy2 == 'Ordinal Encoder':
-            encoder = OrdinalEncoder()
-            data_copy[categorical_cols] = encoder.fit_transform(data_copy[categorical_cols])
-        elif strategy2 == 'OneHot Encoder':
-            encoder = OneHotEncoder(sparse_output=False)
-            encoded_data = pd.DataFrame(encoder.fit_transform(data_copy[categorical_cols]),
-                                        columns=encoder.get_feature_names_out(categorical_cols),
-                                        index=data_copy.index)
-            data_copy = data_copy.drop(categorical_cols, axis=1)
-            data_copy = pd.concat([data_copy, encoded_data], axis=1)
-    
-        return data_copy
-    
-    # Botón para aplicar la estrategia de codificación
-    if st.button('Aplicar Estrategia de Codificación'):
-        encoded_data = apply_encoding(heartdisease, strategy2)
-        
-        # Mostrar los datos codificados
-        st.write(f"Vista previa de los datos codificados usando '{strategy2}':")
-        st.dataframe(encoded_data.head())
-        st.write(f"Información de los datos codificados:")
-        st.write(encoded_data.info())
-        st.session_state.heartdisease_copy = encoded_data.copy()
-
-if st.sidebar.checkbox("Escalado de datos"):
-    st.write("### Escalado de datos")
-    # Estrategias disponibles
-    estrategias1 = ['Standard Scaler', 'MinMax Scaler', 'Robust Scaler']
-
-    # Crear selectbox para seleccionar estrategia
-    strategy = st.selectbox('Selecciona una estrategia de escalado:', estrategias1, index=0)
-    
-    # Función para aplicar el escalado
-    def apply_scaling(data, strategy):
-        numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
-    
-        if len(numeric_cols) == 0:
-            st.warning("No hay columnas numéricas en los datos.")
-            return data
-    
-        data_copy = data.copy()
-    
-        if strategy == 'Standard Scaler':
-            scaler = StandardScaler()
-            data_copy[numeric_cols] = scaler.fit_transform(data_copy[numeric_cols])
-        elif strategy == 'MinMax Scaler':
-            scaler = MinMaxScaler()
-            data_copy[numeric_cols] = scaler.fit_transform(data_copy[numeric_cols])
-        elif strategy == 'Robust Scaler':
-            scaler = RobustScaler()
-            data_copy[numeric_cols] = scaler.fit_transform(data_copy[numeric_cols])
-    
-        return data_copy
-    
-    # Botón para aplicar la estrategia
-    if st.button('Aplicar Estrategia de Escalado'):
-        
-        scaled_data = apply_scaling(st.session_state.heartdisease_copy, strategy)
-        
-        # Mostrar los datos escalados
-        st.write(f"Vista previa de los datos escalados usando '{strategy}':")
-        st.dataframe(scaled_data.head())
-        
-# Modelo de redes neuronales
-if st.sidebar.checkbox("Utilizar redes Neuronales"): 
-    st.write("### Redes Neuronales")
-    
-    st.write("""
-    El modelo utilizado consiste en una red neuronal de una capa con 32 neuronas de entrada.
-    La base de datos fue codificada con One Hot Encoder y estandarizada con StandardScaler.
-    """)
-
-
-    
-    st.write("### Indique si desea hacer una predicción de manera manual o usar datos por defecto")
-    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'])
-    if selected_column=='Por defecto':
-        # Buscar el archivo del modelo dentro de la carpeta extraída
-        model_path = None
-        for root, _, files in os.walk(extract_path):
-            for file in files:
-                if file.endswith(".h5"):
-                    model_path = os.path.join(root, file)
-                    break
-                    
-        if model_path:
-            # Cargar el modelo
-            model = tf.keras.models.load_model(model_path)
-            #st.success("Modelo cargado correctamente.")
-            X = heartdisease.iloc[:, :-1]
-            y = heartdisease['Cath']
-            X_encoded = pd.get_dummies(X, drop_first=True,dtype= int)
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X_encoded)
-            label_encoder = LabelEncoder()
-            y_encoded = label_encoder.fit_transform(y)
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_encoded, test_size=0.2, random_state=42)
-
-            st.write("### Indique los datos por defecto que desea uasr para la predicción")
-            data_model = st.selectbox("Selecciona un método para la predicción", ['Datos 1','Datos 2','Datos 3','Datos 4','Datos 5'])
-
-            if data_model=='Datos 1':
-                input_data = X_train[0].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
-            if data_model=='Datos 2':
-                input_data = X_train[1].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
-            if data_model=='Datos 3':
-                input_data = X_train[2].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
-            if data_model=='Datos 4':
-                input_data = X_train[3].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
-            if data_model=='Datos 5':
-                input_data = X_train[4].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
-            
-            # Realizar predicción
-            prediction = model.predict(input_data)
-            st.write("Predicción del modelo:", prediction)
-        else:
-            st.error("No se encontró un archivo .h5 en el ZIP. Verifica el contenido.")
-
-
-if hasattr(model1, 'get_params'):
-    print("El modelo tiene el método 'get_params'")
-    params = model1.get_params()
-    print(params)
 else:
-    print("El modelo no tiene el método 'get_params'")
+    # Si se selecciona la opción de "Ingreso manual"
+    st.subheader("Ingreso de Datos Manual")
+    
+    # Campos para ingresar datos manualmente
+    age = st.number_input("Edad", min_value=0, value=30)
+    weight = st.number_input("Peso (kg)", min_value=0.0, value=70.0)
+    length = st.number_input("Altura (cm)", min_value=0, value=170)
+    sex = st.selectbox("Sexo", options=["Masculino", "Femenino"])
 
-# Colocar el checkbox en la barra lateral
-if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
-    st.write("#### Hiperparámetros del modelo")
+    # Sección 2: Información Médica
+    diabetes = st.selectbox("¿Tienes Diabetes?", options=["Sí", "No"])
+    hypertension = st.selectbox("¿Tienes Hipertensión?", options=["Sí", "No"])
+    smoker = st.selectbox("¿Eres fumador?", options=["Sí", "No"])
 
-    # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
-    if hasattr(model1, 'get_params'):
-        st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
+    # Sección 3: Síntomas y Examen Físico
+    chest_pain = st.selectbox("¿Dolor en el pecho?", options=["Sí", "No"])
+    shortness_breath = st.selectbox("¿Dificultad para respirar?", options=["Sí", "No"])
 
-        model1_params = model1.get_params()  # Extraer los hiperparámetros del modelo
+    # Sección 4: Resultados de Laboratorio
+    glucose = st.number_input("Glucosa en ayunas (mg/dL)", min_value=0.0, value=0.0)
+    creatinine = st.number_input("Creatinina (mg/dL)", min_value=0.0, value=0.0)
+    lipids = st.number_input("Lípidos totales (mg/dL)", min_value=0.0, value=0.0)
 
-        # Convertir los hiperparámetros a un formato adecuado para una tabla
-        model1_params_table = [(key, value) for key, value in model1_params.items()]
+    # Sección 5: Resultados ECG y Ecocardiografía
+    ejection_fraction = st.number_input("Fracción de eyección (%)", min_value=0.0, value=0.0)
+    ecg_abnormalities = st.selectbox("¿Anomalías en ECG?", options=["Sí", "No"])
 
-        # Limpiar los valores None o <NA> y reemplazarlos con un guion o valor vacío
-        cleaned_model1_params = [
-            (key, value if value is not None and value != "<NA>" else "-") 
-            for key, value in model1_params_table
-        ]
+    # Botón para guardar los datos manualmente
+    if st.button("Guardar datos manuales"):
+        # Crear un DataFrame con los datos ingresados manualmente
+        df_manual = pd.DataFrame([{
+            'Edad': age,
+            'Peso': weight,
+            'Altura': length,
+            'Sexo': sex,
+            'Diabetes': diabetes,
+            'Hipertensión': hypertension,
+            'Fumador': smoker,
+            'Dolor en el pecho': chest_pain,
+            'Dificultad para respirar': shortness_breath,
+            'Glucosa en ayunas': glucose,
+            'Creatinina': creatinine,
+            'Lípidos totales': lipids,
+            'Fracción de eyección': ejection_fraction,
+            'Anomalías ECG': ecg_abnormalities
+        }])
 
-        # Mostrar los parámetros del modelo 1 como una tabla
-        model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
-        st.dataframe(model1_params_df)
-
-    # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
-    if hasattr(model2, 'get_config'):
-        st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
-
-        # Obtener los hiperparámetros de la red neuronal
-        model2_config = model2.get_config()
-
-        # Mostrar la configuración de la red neuronal en un formato legible
-        model2_params = []
-        for layer in model2.layers:
-            layer_info = {
-                "Capa": layer.__class__.__name__,  # Nombre de la capa (ej. Dense, Conv2D)
-                "Hiperparámetros": layer.get_config()  # Obtiene la configuración de la capa
-            }
-            model2_params.append(layer_info)
-
-        # Mostrar los parámetros del modelo en un DataFrame
-        model2_params_df = pd.DataFrame(model2_params)
-        st.dataframe(model2_params_df)
-
-        # Obtener el learning rate
-        if hasattr(model2, 'optimizer'):
-            optimizer = model2.optimizer
-            if hasattr(optimizer, 'lr'):  # Para versiones más antiguas de Keras
-                learning_rate = optimizer.lr.numpy()
-            elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
-                learning_rate = optimizer.learning_rate.numpy()
-
-            st.write(f"##### Learning Rate: {learning_rate}")
-
-        # Información adicional sobre las épocas, batch_size y otros parámetros de entrenamiento
-        st.write("##### Información adicional:")
-        st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
-    else:
-        st.write("El modelo no tiene el método get_config() disponible.")
-
-
-
-# Continuación del flujo para predicción manual o por defecto
-
+        # Guardar los datos en un archivo Excel
+        file_path_manual = "datos_formulario_manual.xlsx"
+        df_manual.to_excel(file_path_manual, index=False)
+        st.success("¡Datos guardados correctamente!")
 
