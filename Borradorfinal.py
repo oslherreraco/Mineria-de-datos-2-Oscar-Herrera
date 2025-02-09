@@ -456,17 +456,16 @@ if st.checkbox("Mostrar hiperparámetros del modelo"):
 
         # Mostrar la configuración de la red neuronal en un formato legible
         model2_params = []
-        for layer in model2_config:
+        for layer in model2.layers:
             layer_info = {
-                "Capa": layer['class_name'],
-                "Hiperparámetros": layer['config']
+                "Capa": layer.__class__.__name__,  # Nombre de la capa (ej. Dense, Conv2D)
+                "Hiperparámetros": layer.get_config()  # Obtiene la configuración de la capa
             }
             model2_params.append(layer_info)
-
+        
         model2_params_df = pd.DataFrame(model2_params)
+        st.dataframe(model2_params_df)  # Muestra los parámetros de la red neuronal
 
-        # Mostrar la tabla con los parámetros de la red neuronal
-        st.dataframe(model2_params_df)
 
 # Continuación del flujo para predicción manual o por defecto
 
