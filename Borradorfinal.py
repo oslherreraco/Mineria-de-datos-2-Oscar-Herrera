@@ -9,10 +9,8 @@ chas_options = [0, 1]  # Si existe una variable CHAS (0 o 1)
 rad_options = list(range(1, 25))  # Si existe una variable RAD (1-24)
 
 # Organizar las columnas con las variables médicas
-num_columns = 3  # Número de columnas en el formulario
-
-# Definir las columnas del dataset (ajústalas según tu conjunto de datos real)
-columns = ["Sex", "Age", "BMI", "CHAS", "RAD", "Weight"]
+columns = ["Sex", "Age", "BMI", "CHAS", "RAD", "Weight"]  # Ajusta según tu dataset real
+num_columns = 3  # Número de columnas por fila
 
 # Cargar el modelo entrenado
 def load_model():
@@ -108,7 +106,6 @@ elif input_method == "Cargar archivo Excel":
                 st.error(f"El archivo Excel debe contener las siguientes columnas: {', '.join(columns)}")
         except Exception as e:
             st.error(f"Error al procesar el archivo: {str(e)}")
-
 
 model1, model2 = load_model()
 
