@@ -415,15 +415,9 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             st.error("No se encontró un archivo .h5 en el ZIP. Verifica el contenido.")
 
 
-from sklearn.ensemble import RandomForestClassifier
-
-# Inicializa el modelo
-model1 = RandomForestClassifier()
-
-# Asegúrate de que 'model1' tiene el método 'get_params'
 if hasattr(model1, 'get_params'):
     print("El modelo tiene el método 'get_params'")
-    params = model1.get_params()  # Obtiene los parámetros del modelo
+    params = model1.get_params()
     print(params)
 else:
     print("El modelo no tiene el método 'get_params'")
