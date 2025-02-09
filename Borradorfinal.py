@@ -61,156 +61,106 @@ def load_model():
         model = pickle.load(f)
     return model
 
-# Definir las nuevas columnas (variables médicas)
-columns = [
-    "Age", "Weight", "Length", "Sex", "BMI", "DM", "HTN", "Current Smoker", 
-    "EX-Smoker", "FH", "Obesity", "CRF", "CVA", "Airway disease", 
-    "Thyroid Disease", "CHF", "DLP", "BP", "PR", "Edema", "Weak Peripheral Pulse", 
-    "Lung rales", "Systolic Murmur", "Diastolic Murmur", "Typical Chest Pain", 
-    "Dyspnea", "Function Class", "Atypical", "Nonanginal", "Exertional CP", 
-    "LowTH Ang", "Q Wave", "St Elevation", "St Depression", "Tinversion", "LVH", 
-    "Poor R Progression", "BBB", "FBS", "CR", "TG", "LDL", "HDL", "BUN", "ESR", 
-    "HB", "K", "Na", "WBC", "Lymph", "Neut", "PLT", "EF-TTE", "Region RWMA", 
-    "VHD", "Cath"
-]
+import streamlit as st
+import numpy as np
+import pandas as pd
 
-# Descripción de las variables (en caso de que se desee mostrar ayuda)
-column_types = {
-    "Age": "Edad del paciente (numérico real)",
-    "Weight": "Peso del paciente (numérico real)",
-    "Length": "Altura del paciente (numérico real)",
-    "Sex": "Sexo del paciente (1: Masculino, 0: Femenino)",
-    "BMI": "Índice de masa corporal (numérico real)",
-    "DM": "Diabetes Mellitus (0: No, 1: Sí)",
-    "HTN": "Hipertensión (0: No, 1: Sí)",
-    "Current Smoker": "Fumador actual (0: No, 1: Sí)",
-    "EX-Smoker": "Exfumador (0: No, 1: Sí)",
-    "FH": "Antecedentes familiares (0: No, 1: Sí)",
-    "Obesity": "Obesidad (0: No, 1: Sí)",
-    "CRF": "Insuficiencia renal crónica (0: No, 1: Sí)",
-    "CVA": "Accidente cerebrovascular (0: No, 1: Sí)",
-    "Airway disease": "Enfermedad de las vías respiratorias (0: No, 1: Sí)",
-    "Thyroid Disease": "Enfermedad tiroidea (0: No, 1: Sí)",
-    "CHF": "Insuficiencia cardiaca congestiva (0: No, 1: Sí)",
-    "DLP": "Dislipidemia (0: No, 1: Sí)",
-    "BP": "Presión arterial (numérico real)",
-    "PR": "Frecuencia cardiaca (numérico real)",
-    "Edema": "Edema (0: No, 1: Sí)",
-    "Weak Peripheral Pulse": "Pulso periférico débil (0: No, 1: Sí)",
-    "Lung rales": "Rales pulmonares (0: No, 1: Sí)",
-    "Systolic Murmur": "Murmullo sistólico (0: No, 1: Sí)",
-    "Diastolic Murmur": "Murmullo diastólico (0: No, 1: Sí)",
-    "Typical Chest Pain": "Dolor típico en el pecho (0: No, 1: Sí)",
-    "Dyspnea": "Disnea (0: No, 1: Sí)",
-    "Function Class": "Clase funcional (1-4, donde 1 es la mejor)",
-    "Atypical": "Dolor atípico (0: No, 1: Sí)",
-    "Nonanginal": "Dolor no anginoso (0: No, 1: Sí)",
-    "Exertional CP": "Dolor torácico en esfuerzo (0: No, 1: Sí)",
-    "LowTH Ang": "Angina de bajo umbral (0: No, 1: Sí)",
-    "Q Wave": "Onda Q (0: No, 1: Sí)",
-    "St Elevation": "Elevación del segmento ST (0: No, 1: Sí)",
-    "St Depression": "Depresión del segmento ST (0: No, 1: Sí)",
-    "Tinversion": "Inversión de la onda T (0: No, 1: Sí)",
-    "LVH": "Hipertrofia ventricular izquierda (0: No, 1: Sí)",
-    "Poor R Progression": "Progresión pobre de la onda R (0: No, 1: Sí)",
-    "BBB": "Bloqueo de rama (0: No, 1: Sí)",
-    "FBS": "Glucosa en ayunas (numérico real)",
-    "CR": "Creatinina (numérico real)",
-    "TG": "Triglicéridos (numérico real)",
-    "LDL": "Colesterol LDL (numérico real)",
-    "HDL": "Colesterol HDL (numérico real)",
-    "BUN": "Nitrógeno ureico en sangre (numérico real)",
-    "ESR": "Velocidad de sedimentación de eritrocitos (numérico real)",
-    "HB": "Hemoglobina (numérico real)",
-    "K": "Potasio (numérico real)",
-    "Na": "Sodio (numérico real)",
-    "WBC": "Recuento de leucocitos (numérico real)",
-    "Lymph": "Linfocitos (numérico real)",
-    "Neut": "Neutrófilos (numérico real)",
-    "PLT": "Plaquetas (numérico real)",
-    "EF-TTE": "Fracción de eyección (numérico real)",
-    "Region RWMA": "Región con movimiento de la pared ventricular alterado (numérico real)",
-    "VHD": "Enfermedad valvular (0: No, 1: Sí)",
-    "Cath": "Catarización (0: No, 1: Sí)"
-}
+# Definir las opciones para las variables categóricas (si es necesario)
+chas_options = [0, 1]  # Si existe una variable CHAS (0 o 1)
+rad_options = list(range(1, 25))  # Si existe una variable RAD (1-24)
 
-# Crear una función que construya la interfaz y haga la predicción
-def predict_price(model):
-    # Título de la app
-    st.title('Predicción de datos médicos')
+# Organizar las columnas con las variables médicas
+num_columns = 3  # Número de columnas en el formulario
 
-    # Selección entre cargar archivo o ingresar datos manualmente
-    input_method = st.radio("¿Cómo deseas ingresar los datos?", 
-                            options=["Ingresar datos manualmente", "Cargar archivo Excel"])
+# Crear un diccionario para los datos de entrada
+input_data = {}
 
-    if input_method == "Cargar archivo Excel":
-        # Subir archivo Excel
-        uploaded_file = st.file_uploader("Cargar archivo Excel", type="xlsx")
+# Título de la aplicación
+st.title('Predicción de datos médicos')
+
+# Selección entre cargar archivo o ingresar datos manualmente
+input_method = st.radio("¿Cómo deseas ingresar los datos?", 
+                        options=["Ingresar datos manualmente", "Cargar archivo Excel"])
+
+# Si el usuario elige "Ingresar datos manualmente"
+if input_method == "Ingresar datos manualmente":
+    # Crear un diccionario para los datos de entrada
+    input_data = {}
+
+    # Dividir las variables en filas, asignando 3 columnas por fila
+    for i in range(0, len(columns), num_columns):
+        cols = st.columns(num_columns)
         
-        if uploaded_file is not None:
+        for j, col in enumerate(columns[i:i+num_columns]):
+            # Determinar el tipo de entrada según el tipo de variable
+            if col == "Sex":  # Variable categórica con dos opciones
+                input_value = cols[j].selectbox(
+                    f"Ingrese el valor para {col} (1: Masculino, 0: Femenino)", 
+                    options=[0, 1],
+                    help=column_types[col]
+                )
+            elif col == "BMI" or col == "Age" or col == "Weight":  # Variables numéricas
+                input_value = cols[j].text_input(
+                    f"Ingrese el valor para {col}",
+                    value=str(st.session_state.get(f'input_{col}', '')),
+                    help=column_types[col]
+                )
+            elif col == "CHAS":  # Variable específica para CHAS
+                input_value = cols[j].selectbox(
+                    f"Ingrese el valor para {col} (0 o 1)", 
+                    options=chas_options,
+                    help=column_types[col]
+                )
+            elif col == "RAD":  # Variable específica para RAD
+                input_value = cols[j].selectbox(
+                    f"Ingrese el valor para {col} (1-24)", 
+                    options=rad_options,
+                    help=column_types[col]
+                )
+            else:  # Para otras variables, usamos text_input
+                input_value = cols[j].text_input(
+                    f"Ingrese el valor para {col}",
+                    value=str(st.session_state.get(f'input_{col}', '')),
+                    help=column_types[col]
+                )
+
+            # Convertir el valor ingresado a número (si es válido)
             try:
-                # Leer el archivo Excel
-                data = pd.read_excel(uploaded_file)
-                
-                # Verificar si las columnas necesarias están presentes en el archivo
-                if all(col in data.columns for col in columns):
-                    st.write("Datos cargados correctamente:")
-                    st.write(data)
+                input_value = float(input_value) if input_value else 0.0  # Usar 0.0 si no se ingresa valor
+            except ValueError:
+                input_value = 0.0  # En caso de que no se ingrese un número válido
 
-                    # Convertir las filas del DataFrame a un formato adecuado para el modelo
-                    input_data = data[columns].values
+            # Guardamos el valor en session_state
+            st.session_state[f'input_{col}'] = input_value
+            input_data[col] = input_value  # Guardar el valor en el diccionario de entrada
 
-                    # Realizamos la predicción
-                    prediction = model.predict(input_data)
-                    st.write(f"### El valor estimado es: {prediction}")
+    # Botón para predecir el valor basado en los datos ingresados
+    if st.button("Predecir"):
+        input_array = np.array([list(input_data.values())])
+        prediction = model.predict(input_array)
+        st.write(f"### El valor estimado es: {prediction[0]:,.4f}")
 
-                else:
-                    st.error(f"El archivo Excel debe contener las siguientes columnas: {', '.join(columns)}")
-            except Exception as e:
-                st.error(f"Error al procesar el archivo: {str(e)}")
-
-    else:  # Si la opción es "Ingresar datos manualmente"
-        st.write("#### Datos del paciente")
-        st.write("Introduce los datos del paciente para estimar el valor.")
-
-        # Inicializar las variables en st.session_state si no están presentes
-        for col in columns:
-            if f"input_{col}" not in st.session_state:
-                st.session_state[f"input_{col}"] = 0.0  # Inicializar cada variable individualmente con valor 0.0
-
-        # Organizar la entrada en forma de tabla con 6 columnas
-        input_data = {}
-
-        # Número de columnas que queremos
-        num_columns = 3
-
-        # Crear número de filas necesario según el número de variables
-        for i in range(0, len(columns), num_columns):
-            # Crear 3 columnas para cada fila
-            cols = st.columns(num_columns)
+# Si el usuario elige "Cargar archivo Excel"
+elif input_method == "Cargar archivo Excel":
+    uploaded_file = st.file_uploader("Cargar archivo Excel", type="xlsx")
+    if uploaded_file is not None:
+        try:
+            # Leer el archivo Excel
+            data = pd.read_excel(uploaded_file)
             
-            for j, col in enumerate(columns[i:i+num_columns]):
-                # Usamos un selectbox o text_input dependiendo del tipo de variable
-                if isinstance(column_types[col], str):
-                    input_value = cols[j].text_input(
-                        f"Ingrese el valor para {col}",
-                        value=str(st.session_state[f'input_{col}']),
-                        help=column_types[col]
-                    )
-                # Convertir el valor ingresado a número (si es válido)
-                try:
-                    input_value = float(input_value) if input_value else 0.0
-                except ValueError:
-                    input_value = 0.0
+            # Verificar si las columnas necesarias están presentes en el archivo
+            if all(col in data.columns for col in columns):
+                st.write("Datos cargados correctamente:")
+                st.write(data)
 
-                st.session_state[f'input_{col}'] = input_value
-                input_data[col] = input_value
-
-        # Botón "Predecir"
-        if st.button("Predecir"):
-            input_array = np.array([list(input_data.values())])
-            prediction = model.predict(input_array)
-            st.write(f"### El valor estimado es: {prediction[0]:,.4f}")
+                # Realizamos la predicción con los datos cargados
+                input_data_from_file = data[columns].values
+                prediction = model.predict(input_data_from_file)
+                st.write(f"### El valor estimado es: {prediction}")
+            else:
+                st.error(f"El archivo Excel debe contener las siguientes columnas: {', '.join(columns)}")
+        except Exception as e:
+            st.error(f"Error al procesar el archivo: {str(e)}")
 
 
 def main():
