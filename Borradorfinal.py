@@ -4,14 +4,6 @@ import numpy as np
 import pickle
 import gzip
 
-# Definir las opciones para las variables categóricas (si es necesario)
-chas_options = [0, 1]  # Si existe una variable CHAS (0 o 1)
-rad_options = list(range(1, 25))  # Si existe una variable RAD (1-24)
-
-# Organizar las columnas con las variables médicas
-columns = ["Sex", "Age", "BMI", "CHAS", "RAD", "Weight"]  # Ajusta según tu dataset real
-num_columns = 3  # Número de columnas por fila
-
 # Cargar el modelo entrenado
 def load_model():
     """Cargar el modelo desde los archivos comprimidos."""
@@ -19,8 +11,25 @@ def load_model():
         model = pickle.load(f)
     return model
 
-# Crear un diccionario para los datos de entrada
-input_data = {}
+# Definir las opciones para las variables categóricas (si es necesario)
+sex_options = [0, 1]  # 0: Femenino, 1: Masculino
+smoker_options = ['No', 'Yes']  # Opción para fumar
+dm_options = ['No', 'Yes']  # Diabetes
+htn_options = ['No', 'Yes']  # Hipertensión
+# Puedes continuar añadiendo opciones similares para otras variables categóricas
+
+# Variables de ejemplo para el formulario
+columns = [
+    "Age", "Weight", "Length", "Sex", "BMI", "DM", "HTN", "Current Smoker", 
+    "EX-Smoker", "FH", "Obesity", "CRF", "CVA", "Airway disease", "Thyroid Disease",
+    "CHF", "DLP", "BP", "PR", "Edema", "Weak Peripheral Pulse", "Lung rales", 
+    "Systolic Murmur", "Diastolic Murmur", "Typical Chest Pain", "Dyspnea", 
+    "Function Class", "Atypical", "Nonanginal", "Exertional CP", "LowTH Ang", 
+    "Q Wave", "St Elevation", "St Depression", "Tinversion", "LVH", 
+    "Poor R Progression", "BBB", "FBS", "CR", "TG", "LDL", "HDL", "BUN", 
+    "ESR", "HB", "K", "Na", "WBC", "Lymph", "Neut", "PLT", "EF-TTE", 
+    "Region RWMA", "VHD", "Cath"
+]  # Esta lista contiene todas las variables de tu conjunto de datos.
 
 # Cargar el modelo una sola vez al principio
 model = load_model()
@@ -38,42 +47,33 @@ if input_method == "Ingresar datos manualmente":
     input_data = {}
 
     # Dividir las variables en filas, asignando 3 columnas por fila
-    for i in range(0, len(columns), num_columns):
-        cols = st.columns(num_columns)
+    for i in range(0, len(columns), 3):
+        cols = st.columns(3)
         
-        for j, col in enumerate(columns[i:i+num_columns]):
+        for j, col in enumerate(columns[i:i+3]):
             # Determinar el tipo de entrada según el tipo de variable
             if col == "Sex":  # Variable categórica con dos opciones
                 input_value = cols[j].selectbox(
                     f"Ingrese el valor para {col} (1: Masculino, 0: Femenino)", 
-                    options=[0, 1]
+                    options=sex_options
                 )
-            elif col == "BMI" or col == "Age" or col == "Weight":  # Variables numéricas
+            elif col == "Current Smoker" or col == "DM" or col == "HTN":  # Variables categóricas
+                input_value = cols[j].selectbox(
+                    f"Ingrese el valor para {col} (No, Yes)", 
+                    options=smoker_options if col == "Current Smoker" else dm_options
+                )
+            elif col == "BMI" or col == "Age" or col == "Weight" or col == "Length":  # Variables numéricas
+                input_value = cols[j].number_input(
+                    f"Ingrese el valor para {col}",
+                    min_value=0.0,
+                    step=0.1,
+                    value=float(st.session_state.get(f'input_{col}', 0.0))
+                )
+            else:  # Para otras variables, usamos selectbox o number_input
                 input_value = cols[j].text_input(
                     f"Ingrese el valor para {col}",
                     value=str(st.session_state.get(f'input_{col}', ''))
                 )
-            elif col == "CHAS":  # Variable específica para CHAS
-                input_value = cols[j].selectbox(
-                    f"Ingrese el valor para {col} (0 o 1)", 
-                    options=chas_options
-                )
-            elif col == "RAD":  # Variable específica para RAD
-                input_value = cols[j].selectbox(
-                    f"Ingrese el valor para {col} (1-24)", 
-                    options=rad_options
-                )
-            else:  # Para otras variables, usamos text_input
-                input_value = cols[j].text_input(
-                    f"Ingrese el valor para {col}",
-                    value=str(st.session_state.get(f'input_{col}', ''))
-                )
-
-            # Convertir el valor ingresado a número (si es válido)
-            try:
-                input_value = float(input_value) if input_value else 0.0  # Usar 0.0 si no se ingresa valor
-            except ValueError:
-                input_value = 0.0  # En caso de que no se ingrese un número válido
 
             # Guardamos el valor en session_state
             st.session_state[f'input_{col}'] = input_value
