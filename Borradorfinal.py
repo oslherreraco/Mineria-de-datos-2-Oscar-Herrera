@@ -1,38 +1,61 @@
-# Mostrar los hiperparámetros de los modelos
+# Cargar y mostrar los hiperparámetros de los modelos
 if st.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
 
-    # Mostrar hiperparámetros del modelo 1 (sklearn) si está cargado
+    # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
     if hasattr(model1, 'get_params'):
-        model1_params = model1.get_params()
+        st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
+
+        model1_params = model1.get_params()  # Extraer los hiperparámetros del modelo
 
         # Convertir los hiperparámetros a un formato adecuado para una tabla
         model1_params_table = [(key, value) for key, value in model1_params.items()]
 
-        # Reemplazar <NA> o None por un guion o valor vacío
+        # Limpiar los valores None o <NA> y reemplazarlos con un guion o valor vacío
         cleaned_model1_params = [
             (key, value if value is not None and value != "<NA>" else "-") 
             for key, value in model1_params_table
         ]
 
-        # Mostrar los hiperparámetros del modelo 1 (sklearn) en una tabla
-        st.write("#### Hiperparámetros del modelo 1 (sklearn):")
+        # Mostrar los parámetros del modelo 1 como una tabla
         model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
         st.dataframe(model1_params_df)
 
-    # Mostrar hiperparámetros del modelo 2 (red neuronal) si está cargado
+    # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
     if hasattr(model2, 'get_config'):
+        st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
+
+        # Obtener los hiperparámetros de la red neuronal
         model2_config = model2.get_config()
-        model2_params = model2_config[0]['config']
 
-        # Extraer y mostrar los parámetros de la red neuronal
-        model2_params_table = [(key, value) for key, value in model2_params.items()]
+        # Mostrar la configuración de la red neuronal en un formato legible
+        model2_params = []
+        for layer in model2_config:
+            layer_info = {
+                "Capa": layer['class_name'],
+                "Hiperparámetros": layer['config']
+            }
+            model2_params.append(layer_info)
 
-        # Mostrar los hiperparámetros del modelo 2 (red neuronal) en una tabla
-        st.write("#### Hiperparámetros del modelo 2 (red neuronal):")
-        model2_params_df = pd.DataFrame(model2_params_table, columns=["Hiperparámetro", "Valor"])
+        model2_params_df = pd.DataFrame(model2_params)
+
+        # Mostrar la tabla con los parámetros de la red neuronal
         st.dataframe(model2_params_df)
 
-    # Si no hay modelos cargados, mostrar un mensaje de advertencia
-    if not hasattr(model1, 'get_params') and not hasattr(model2, 'get_config'):
-        st.warning("No se encontraron modelos cargados para mostrar los hiperparámetros.")
+# Continuación del flujo para predicción manual o por defecto
+if selected_column == 'Manual':
+    st.write("### Ingresar datos manualmente para predicción")
+    # Aquí debes agregar los widgets para que el usuario ingrese los datos manualmente.
+    # Dependiendo de los valores que necesitas para la red neuronal, deberías crear inputs para ellos.
+    # Ejemplo:
+    input_data = []
+    input_data.append(st.number_input("Edad", min_value=0))
+    input_data.append(st.number_input("Peso", min_value=0))
+    # Aquí añadir los campos adicionales necesarios para completar las características de entrada de la red neuronal.
+
+    # Cuando se ingresen los datos, puedes hacer la predicción de la siguiente manera:
+    if st.button("Realizar Predicción"):
+        input_data = np.array(input_data).reshape(1, -1)
+        prediction = model2.predict(input_data)
+        st.write("Predicción de la red neuronal:", prediction)
+
