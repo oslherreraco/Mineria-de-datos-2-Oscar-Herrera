@@ -420,6 +420,7 @@ if st.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
 
     # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
+    print(type(model1))
     if hasattr(model1, 'get_params'):
         st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
 
