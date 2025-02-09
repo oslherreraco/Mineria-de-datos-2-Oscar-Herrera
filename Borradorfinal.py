@@ -413,21 +413,37 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             st.error("No se encontró un archivo .h5 en el ZIP. Verifica el contenido.")
 
 
-        if st.checkbox("Mostrar hiperparámetros del modelo"):
-            st.write("#### Hiperparámetros del modelo")
-            if st.session_state.model_params is not None:
-                # Estilo HTML para controlar el ancho de las columnas
-                st.markdown(
-                    """
-                    <style>
-                    .dataframe th, .dataframe td {
-                        padding: 10px;
-                        text-align: left;
-                        width: 300px;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True
-                )
+ if hasattr(model, 'get_params'):
+                    model_params = model.get_params()
+
+                    # Convertir los hiperparámetros a un formato adecuado para una tabla
+                    model_params_table = [(key, value) for key, value in model_params.items()]
+
+                    # Reemplazar <NA> o None por un guion o valor vacío
+                    cleaned_model_params = [
+                        (key, value if value is not None and value != "<NA>" else "-") 
+                        for key, value in model_params_table
+                    ]
+
+                    # Convertir a un DataFrame de pandas para tener control sobre la tabla
+                    st.session_state.model_params = pd.DataFrame(cleaned_model_params, columns=["Hiperparámetro", "Valor"])
+
+    # Checkbox para mostrar los hiperparámetros
+    if st.checkbox("Mostrar hiperparámetros del modelo"):
+        st.write("#### Hiperparámetros del modelo")
+        if st.session_state.model_params is not None:
+            # Estilo HTML para controlar el ancho de las columnas
+            st.markdown(
+                """
+                <style>
+                .dataframe th, .dataframe td {
+                    padding: 10px;
+                    text-align: left;
+                    width: 300px;
+                }
+                </style>
+                """, unsafe_allow_html=True
+            )
 
             # Mostrar la tabla con estilo CSS para un ancho adecuado
             st.write(st.session_state.model_params.to_html(index=False, escape=False), unsafe_allow_html=True)
