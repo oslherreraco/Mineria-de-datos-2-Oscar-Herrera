@@ -65,7 +65,7 @@ def load_model():
         model2 = pickle.load(f)
     return model1, model2
 
-print(type(model1))
+
 
 
 # Mostrar informacion en el dataset
