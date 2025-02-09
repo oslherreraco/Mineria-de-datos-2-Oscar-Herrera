@@ -13,6 +13,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 
+from PIL import Image
+import gzip
+import pickle
+
+
 heartdisease = pd.read_csv('heartdisease.csv')
 
 # Título de la aplicación
@@ -46,6 +51,19 @@ Y además, transformar los datos mediante la imputación de datos faltantes, la 
 
 # Sección para explorar el dataset
 st.sidebar.header("Exploración de datos")
+
+def load_model():
+    """Cargar el modelo y sus pesos desde el archivo model_weights.pkl."""
+
+    # nombre de la red neuronal
+    filename = 'model_trained_classifier.pkl.gz'
+    with gzip.open(filename, 'rb') as f:
+        model1 = pickle.load(f)
+
+    filename = 'best_model.pkl.gz'
+    with gzip.open(filename, 'rb') as f:
+        model2 = pickle.load(f)
+    return model1, model2
 
 
 # Mostrar informacion en el dataset
@@ -338,14 +356,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
     La base de datos fue codificada con One Hot Encoder y estandarizada con StandardScaler.
     """)
 
-    # Extracción del 
-    def load_model():
-        filename = "best_model.pkl.gz"  # Asegúrate de tener el modelo comprimido en .gz
-        with gzip.open(filename, 'rb') as f:
-            model = pickle.load(f)
-        return model
 
-    
     
     st.write("### Indique si desea hacer una predicción de manera manual o usar datos por defecto")
     selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'])
