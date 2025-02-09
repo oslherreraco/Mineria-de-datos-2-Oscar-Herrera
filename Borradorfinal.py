@@ -1,69 +1,8 @@
 import streamlit as st
-import os
-import joblib
-import zipfile
 import pandas as pd
-import seaborn as sns
-import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from sklearn.impute import KNNImputer
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
-
-from PIL import Image
-import gzip
-import pickle
-
-
-heartdisease = pd.read_csv('heartdisease.csv')
-
-# Título de la aplicación
-st.title("Exploración de datos: Heart Disease")
-st.image('heartdisease.jpg', caption="Problemas del corazón")
-# Descripción inicial
-st.markdown("""
-Las enfermedades cardiovasculares son muy comunes y representan una de las principales causas de muerte. 
-Entre los principales tipos de estas enfermedades, el diagnóstico correcto y a tiempo de la enfermedad arterial coronaria (CAD) es de suma importancia. 
-
-Aunque la angiografía es el método más preciso para diagnosticar CAD, presenta muchos efectos secundarios y es costoso. 
-Estudios previos han utilizado varias características al recopilar datos de pacientes, aplicando diferentes algoritmos de minería de datos para lograr métodos con alta precisión, menos efectos secundarios y menores costos.
-
-En este contexto, se presenta un conjunto de datos llamado **Z-Alizadeh Sani**, que contiene información de 303 pacientes y 54 características, utilizando varios atributos efectivos para el análisis.
-""")
-st.write("""
-### ¡Bienvenidos!
-Esta aplicación interactiva permite explorar el dataset de Heart Disease.
-Puedes:
-1. Ver los primeros registros.
-2. Consultar información general del dataset.
-3. Mirar las estadisticas descriptivas.
-4. Identificar los datos faltantes.
-5. Analizar la frecuencia de las columnas.
-6. Observar la información de cada paciente.
-7. Explorar la matriz de correlación.
-8. Generar graficos dinámicos.
-
-Y además, transformar los datos mediante la imputación de datos faltantes, la codificación de variables categóricas y la estandarización de los datos.
-""")
-
-import streamlit as st
 import numpy as np
 import pickle
 import gzip
-import pandas as pd
-
-# Cargar el modelo entrenado
-def load_model():
-    with gzip.open('model_trained_regressor.pkl.gz', 'rb') as f:
-        model = pickle.load(f)
-    return model
-
-import streamlit as st
-import numpy as np
-import pandas as pd
 
 # Definir las opciones para las variables categóricas (si es necesario)
 chas_options = [0, 1]  # Si existe una variable CHAS (0 o 1)
@@ -72,8 +11,21 @@ rad_options = list(range(1, 25))  # Si existe una variable RAD (1-24)
 # Organizar las columnas con las variables médicas
 num_columns = 3  # Número de columnas en el formulario
 
+# Definir las columnas del dataset (ajústalas según tu conjunto de datos real)
+columns = ["Sex", "Age", "BMI", "CHAS", "RAD", "Weight"]
+
+# Cargar el modelo entrenado
+def load_model():
+    """Cargar el modelo desde los archivos comprimidos."""
+    with gzip.open('model_trained_regressor.pkl.gz', 'rb') as f:
+        model = pickle.load(f)
+    return model
+
 # Crear un diccionario para los datos de entrada
 input_data = {}
+
+# Cargar el modelo una sola vez al principio
+model = load_model()
 
 # Título de la aplicación
 st.title('Predicción de datos médicos')
@@ -96,32 +48,27 @@ if input_method == "Ingresar datos manualmente":
             if col == "Sex":  # Variable categórica con dos opciones
                 input_value = cols[j].selectbox(
                     f"Ingrese el valor para {col} (1: Masculino, 0: Femenino)", 
-                    options=[0, 1],
-                    help=column_types[col]
+                    options=[0, 1]
                 )
             elif col == "BMI" or col == "Age" or col == "Weight":  # Variables numéricas
                 input_value = cols[j].text_input(
                     f"Ingrese el valor para {col}",
-                    value=str(st.session_state.get(f'input_{col}', '')),
-                    help=column_types[col]
+                    value=str(st.session_state.get(f'input_{col}', ''))
                 )
             elif col == "CHAS":  # Variable específica para CHAS
                 input_value = cols[j].selectbox(
                     f"Ingrese el valor para {col} (0 o 1)", 
-                    options=chas_options,
-                    help=column_types[col]
+                    options=chas_options
                 )
             elif col == "RAD":  # Variable específica para RAD
                 input_value = cols[j].selectbox(
                     f"Ingrese el valor para {col} (1-24)", 
-                    options=rad_options,
-                    help=column_types[col]
+                    options=rad_options
                 )
             else:  # Para otras variables, usamos text_input
                 input_value = cols[j].text_input(
                     f"Ingrese el valor para {col}",
-                    value=str(st.session_state.get(f'input_{col}', '')),
-                    help=column_types[col]
+                    value=str(st.session_state.get(f'input_{col}', ''))
                 )
 
             # Convertir el valor ingresado a número (si es válido)
@@ -161,37 +108,6 @@ elif input_method == "Cargar archivo Excel":
                 st.error(f"El archivo Excel debe contener las siguientes columnas: {', '.join(columns)}")
         except Exception as e:
             st.error(f"Error al procesar el archivo: {str(e)}")
-
-
-def main():
-    # Cargar el modelo
-    model = load_model()
-
-    # Ejecutar la predicción
-    predict_price(model)
-
-
-# Si el script es ejecutado directamente, se llama a main()
-if __name__ == "__main__":
-    main()
-
-
-# Sección para explorar el dataset
-st.sidebar.header("Exploración de datos")
-
-def load_model():
-    """Cargar el modelo y sus pesos desde el archivo model_weights.pkl."""
-
-    # nombre de la red neuronal
-    filename = 'model_trained_classifier.pkl.gz'
-    with gzip.open(filename, 'rb') as f:
-        model1 = pickle.load(f)
-
-    filename = 'best_model.pkl.gz'
-    with gzip.open(filename, 'rb') as f:
-        model2 = pickle.load(f)
-    return model1, model2
-
 
 
 model1, model2 = load_model()
