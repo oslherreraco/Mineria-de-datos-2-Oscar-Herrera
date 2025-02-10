@@ -405,7 +405,7 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
     """)
 
     st.write("### Indique si desea hacer una predicción de manera manual o cargar una fila desde un archivo Excel")
-    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto', 'Manual', 'Cargar desde Excel'], key="madelo1_metodo_prediccion")
+    selected_column = st.selectbox("Selecciona un método para la predicción", ['Manual', 'Cargar desde Excel'], key="madelo1_metodo_prediccion")
 
 
     if selected_column == 'Cargar desde Excel':
@@ -504,103 +504,47 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
                 st.write("Predicción del modelo:","Cath", prediction)
             else:
                 st.write("Predicción del modelo:","Normal", prediction)
+import pandas as pd
+import numpy as np
+import streamlit as st
 
-
-
-
-# Modelo de redes neuronales
 if st.sidebar.checkbox("Utilizar redes Neuronales"): 
     st.write("### Redes Neuronales")
-    st.write("### dwd Neuronales")
-    
-    
+           
     st.write("""
     El modelo utilizado consiste en una red neuronal de una capa con 32 neuronas de entrada.
     La base de datos fue codificada con One Hot Encoder y estandarizada con StandardScaler.
     """)
 
-    st.write("### Indique si desea hacer una predicción de manera manual o usar datos por defecto")
-    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'],key="madelo2_metodo_prediccion")
-    if selected_column=='Por defecto':
-            st.write("### Indique los datos por defecto que desea uasr para la predicción")
-            data_model = st.selectbox("Selecciona un método para la predicción", ['Datos 1','Datos 2','Datos 3','Datos 4','Datos 5'],key="modelo2_eleccion_datos")
+    st.write("### Indique si desea hacer una predicción de manera manual o cargar un archivo Excel")
+    selected_column = st.selectbox("Selecciona un método para la predicción", ['Cargar archivo Excel', 'Manual'], key="madelo2_metodo_prediccion")
 
-            if data_model=='Datos 1':
-                n=0
-                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
-                if prediction==1 and y_test[n]==1:
-                    st.write("Predicción del modelo:","Cath", prediction)
-                    st.write("Clasificación real","Cath", y_test[n])
-                    st.write("El modelo acertó")                    
-                if prediction==0 and y_test[n]==0:
-                    st.write("Predicción del modelo:","Normal", prediction)
-                    st.write("Clasificación real","Normal", y_test[n])
-                    st.write("El modelo acertó")
+    if selected_column == 'Cargar archivo Excel':
+        st.write("### Cargar el archivo Excel con los datos para la predicción")
+
+        # Cargar archivo Excel
+        uploaded_file = st.file_uploader("Sube un archivo Excel", type="xlsx")
+        
+        if uploaded_file is not None:
+            # Leer archivo Excel
+            df = pd.read_excel(uploaded_file)
+            st.write("Datos cargados:", df.head())
+
+            # Asumimos que el archivo tiene columnas con los datos de entrada.
+            # Necesitarás ajustar esto según el formato del archivo.
+            st.write("### Realizando la predicción con los datos cargados")
+
+            # Asegurarse de que el dataframe tenga los datos necesarios.
+            if not df.empty:
+                # Realizar la predicción utilizando el modelo de redes neuronales
+                prediction = np.argmax(model2.predict(df))
+                
+                if prediction == 1:
+                    st.write("Predicción del modelo: Cath")
                 else:
-                    st.write("Predicción del modelo:", prediction)
-                    st.write("Clasificación real", y_test[n])
-                    st.write("El modelo falló")
-    
-            if data_model=='Datos 2':
-                n=1
-                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
-                if prediction==1 and y_test[n]==1:
-                    st.write("Predicción del modelo:","Cath", prediction)
-                    st.write("Clasificación real","Cath", y_test[n])
-                    st.write("El modelo acertó")                    
-                if prediction==0 and y_test[n]==0:
-                    st.write("Predicción del modelo:","Normal", prediction)
-                    st.write("Clasificación real","Normal", y_test[n])
-                    st.write("El modelo acertó")
-                else:
-                    st.write("Predicción del modelo:", prediction)
-                    st.write("Clasificación real", y_test[n])
-                    st.write("El modelo falló")
-            if data_model=='Datos 3':
-                n=2
-                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
-                if prediction==1 and y_test[n]==1:
-                    st.write("Predicción del modelo:","Cath", prediction)
-                    st.write("Clasificación real","Cath", y_test[n])
-                    st.write("El modelo acertó")                    
-                if prediction==0 and y_test[n]==0:
-                    st.write("Predicción del modelo:","Normal", prediction)
-                    st.write("Clasificación real","Normal", y_test[n])
-                    st.write("El modelo acertó")
-                else:
-                    st.write("Predicción del modelo:", prediction)
-                    st.write("Clasificación real", y_test[n])
-                    st.write("El modelo falló")
-            if data_model=='Datos 4':
-                n=3
-                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
-                if prediction==1 and y_test[n]==1:
-                    st.write("Predicción del modelo:","Cath", prediction)
-                    st.write("Clasificación real","Cath", y_test[n])
-                    st.write("El modelo acertó")                    
-                if prediction==0 and y_test[n]==0:
-                    st.write("Predicción del modelo:","Normal", prediction)
-                    st.write("Clasificación real","Normal", y_test[n])
-                    st.write("El modelo acertó")
-                else:
-                    st.write("Predicción del modelo:", prediction)
-                    st.write("Clasificación real", y_test[n])
-                    st.write("El modelo falló")
-            if data_model=='Datos 5':
-                n=4
-                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
-                if prediction==1 and y_test[n]==1:
-                    st.write("Predicción del modelo:","Cath", prediction)
-                    st.write("Clasificación real","Cath", y_test[n])
-                    st.write("El modelo acertó")                    
-                if prediction==0 and y_test[n]==0:
-                    st.write("Predicción del modelo:","Normal", prediction)
-                    st.write("Clasificación real","Normal", y_test[n])
-                    st.write("El modelo acertó")
-                else:
-                    st.write("Predicción del modelo:", prediction)
-                    st.write("Clasificación real", y_test[n])
-                    st.write("El modelo falló")
+                    st.write("Predicción del modelo: Normal")
+            else:
+                st.write("No se encontraron datos en el archivo.")
     
     if selected_column=='Manual':
         # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
@@ -651,7 +595,6 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo:","Cath", prediction)
             else:
                 st.write("Predicción del modelo:","Normal", prediction)
-
         
 
     
