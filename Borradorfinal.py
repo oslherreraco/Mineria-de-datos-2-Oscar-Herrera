@@ -1,114 +1,115 @@
 import streamlit as st
+import os
+import joblib
+import zipfile
 import pandas as pd
+import seaborn as sns
 import numpy as np
-import pickle
+import tensorflow as tf
+import matplotlib.pyplot as plt
 import gzip
+import pickle
+import io
+from sklearn.impute import KNNImputer
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 
-# Cargar el modelo entrenado
-def load_model():
-    """Cargar el modelo desde los archivos comprimidos."""
-    with gzip.open('model_trained_regressor.pkl.gz', 'rb') as f:
-        model = pickle.load(f)
-    return model
 
-# Definir las opciones para las variables categóricas (si es necesario)
-sex_options = [0, 1]  # 0: Femenino, 1: Masculino
-smoker_options = ['No', 'Yes']  # Opción para fumar
-dm_options = ['No', 'Yes']  # Diabetes
-htn_options = ['No', 'Yes']  # Hipertensión
-# Puedes continuar añadiendo opciones similares para otras variables categóricas
+def load_encoder():
+    with open("onehot_encoder_5.pkl", "rb") as f:
+            encoder = pickle.load(f)
+    with open("numerical_columns_2.pkl", "rb") as f:
+            numerical_columns = pickle.load(f)
+    return encoder, numerical_columns
 
-# Variables de ejemplo para el formulario
-columns = [
-    "Age", "Weight", "Length", "Sex", "BMI", "DM", "HTN", "Current Smoker", 
-    "EX-Smoker", "FH", "Obesity", "CRF", "CVA", "Airway disease", "Thyroid Disease",
-    "CHF", "DLP", "BP", "PR", "Edema", "Weak Peripheral Pulse", "Lung rales", 
-    "Systolic Murmur", "Diastolic Murmur", "Typical Chest Pain", "Dyspnea", 
-    "Function Class", "Atypical", "Nonanginal", "Exertional CP", "LowTH Ang", 
-    "Q Wave", "St Elevation", "St Depression", "Tinversion", "LVH", 
-    "Poor R Progression", "BBB", "FBS", "CR", "TG", "LDL", "HDL", "BUN", 
-    "ESR", "HB", "K", "Na", "WBC", "Lymph", "Neut", "PLT", "EF-TTE", 
-    "Region RWMA", "VHD", "Cath"
-]  # Esta lista contiene todas las variables de tu conjunto de datos.
+def load_model_1():
+    """Cargar el modelo y sus pesos desde el archivo model_weights.pkl."""
+    # nombre de la red neuronal
+    filename = 'model_trained_classifier.pkl.gz'
+    with gzip.open(filename, 'rb') as f:
+        model1 = pickle.load(f)
+    return model1
+    
+def load_model_2():
+    filename = 'best_model.pkl.gz'
+    with gzip.open(filename, 'rb') as f:
+        model2 = pickle.load(f)
+    return model2
 
-# Cargar el modelo una sola vez al principio
-model = load_model()
+model1=load_model_1()
+
+model2=load_model_2()
+
+column_names = [
+            "Age", "Weight", "Length", "Sex", "BMI", "DM", "HTN", "Current Smoker", 
+    "EX-Smoker", "FH", "Obesity", "CRF", "CVA",
+            "Airway disease", "Thyroid Disease", "CHF", "DLP", "BP", "PR", "Edema", 
+    "Weak Peripheral Pulse", "Lung rales",
+            "Systolic Murmur", "Diastolic Murmur", "Typical Chest Pain", "Dyspnea", 
+    "Function Class", "Atypical", "Nonanginal",
+            "Exertional CP", "LowTH Ang", "Q Wave", "St Elevation", "St Depression", 
+    "Tinversion", "LVH", "Poor R Progression",
+            "BBB", "FBS", "CR", "TG", "LDL", "HDL", "BUN", "ESR", "HB", "K", "Na", 
+    "WBC", "Lymph", "Neut", "PLT", "EF-TTE",
+            "Region RWMA"
+        ]
+categorical_columns = {
+            "Sex": ["Male", "Female"],"DM": [0,1],"HTN":[0,1],"Current Smoker": [0, 1],"EX-Smoker": [0, 1],"FH": [0, 1],"Obesity": ["Y", "N"],
+            "CRF": ["Y", "N"],"CVA": ["Y", "N"],"Airway disease": ["Y", "N"],"Thyroid Disease": ["Y", "N"],"CHF": ["Y", "N"],"Edema": [0,1],
+            "Weak Peripheral Pulse": ["Y","N"],"Lung rales": ["Y","N"],"Systolic Murmur": ["Y","N"],"Diastolic Murmur": ["Y","N"],"Typical Chest Pain": [0,1],
+            "Dyspnea": ["Y","N"],"Function Class": [0,1,2,3],"Atypical": ["Y","N"],"Nonanginal": ["Y","N"],"LowTH Ang": ["Y","N"],"Q Wave": [0,1],
+            "St Elevation": [0,1],"St Depression": [0, 1],"Tinversion": [0, 1],"LVH": ["Y", "N"],"Poor R Progression": ["Y", "N"],"BBB": ["LBBB", "N","RBBB"], 
+            "Region RWMA": [0,1,2,3,4],"VHD": ["mild","Moderate","N","Severe"]
+        }
+
+heartdisease = pd.read_csv('heartdisease.csv')
+
+X = heartdisease.iloc[:, :-1]
+y = heartdisease['Cath']
+X_encoded = pd.get_dummies(X, drop_first=True,dtype= int)
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y)
+X_train, X_test, y_train, y_test = train_test_split(X_encoded, y_encoded, test_size=0.2, random_state=42)
+df_defecto=X_test.copy()
+
+df=X_test.copy()
+df_first_row = df.iloc[0,:].to_frame().T # Estos son los valores por defecto y no deben pasar por encoder
+
+
 
 # Título de la aplicación
-st.title('Predicción de datos médicos')
+st.title("Exploración de datos: Heart Disease")
+st.image('heartdisease.jpg', caption="Problemas del corazón")
+# Descripción inicial
+st.markdown("""
+Las enfermedades cardiovasculares son muy comunes y representan una de las principales causas de muerte. 
+Entre los principales tipos de estas enfermedades, el diagnóstico correcto y a tiempo de la enfermedad arterial coronaria (CAD) es de suma importancia. 
 
-# Selección entre cargar archivo o ingresar datos manualmente
-input_method = st.radio("¿Cómo deseas ingresar los datos?", 
-                        options=["Ingresar datos manualmente", "Cargar archivo Excel"])
+Aunque la angiografía es el método más preciso para diagnosticar CAD, presenta muchos efectos secundarios y es costoso. 
+Estudios previos han utilizado varias características al recopilar datos de pacientes, aplicando diferentes algoritmos de minería de datos para lograr métodos con alta precisión, menos efectos secundarios y menores costos.
 
-# Si el usuario elige "Ingresar datos manualmente"
-if input_method == "Ingresar datos manualmente":
-    # Crear un diccionario para los datos de entrada
-    input_data = {}
+En este contexto, se presenta un conjunto de datos llamado **Z-Alizadeh Sani**, que contiene información de 303 pacientes y 54 características, utilizando varios atributos efectivos para el análisis.
+""")
+st.write("""
+### ¡Bienvenidos!
+Esta aplicación interactiva permite explorar el dataset de Heart Disease.
+Puedes:
+1. Ver los primeros registros.
+2. Consultar información general del dataset.
+3. Mirar las estadisticas descriptivas.
+4. Identificar los datos faltantes.
+5. Analizar la frecuencia de las columnas.
+6. Observar la información de cada paciente.
+7. Explorar la matriz de correlación.
+8. Generar graficos dinámicos.
 
-    # Dividir las variables en filas, asignando 3 columnas por fila
-    for i in range(0, len(columns), 3):
-        cols = st.columns(3)
-        
-        for j, col in enumerate(columns[i:i+3]):
-            # Determinar el tipo de entrada según el tipo de variable
-            if col == "Sex":  # Variable categórica con dos opciones
-                input_value = cols[j].selectbox(
-                    f"Ingrese el valor para {col} (1: Masculino, 0: Femenino)", 
-                    options=sex_options
-                )
-            elif col == "Current Smoker" or col == "DM" or col == "HTN":  # Variables categóricas
-                input_value = cols[j].selectbox(
-                    f"Ingrese el valor para {col} (No, Yes)", 
-                    options=smoker_options if col == "Current Smoker" else dm_options
-                )
-            elif col == "BMI" or col == "Age" or col == "Weight" or col == "Length":  # Variables numéricas
-                input_value = cols[j].number_input(
-                    f"Ingrese el valor para {col}",
-                    min_value=0.0,
-                    step=0.1,
-                    value=float(st.session_state.get(f'input_{col}', 0.0))
-                )
-            else:  # Para otras variables, usamos selectbox o number_input
-                input_value = cols[j].text_input(
-                    f"Ingrese el valor para {col}",
-                    value=str(st.session_state.get(f'input_{col}', ''))
-                )
+Y además, transformar los datos mediante la imputación de datos faltantes, la codificación de variables categóricas y la estandarización de los datos.
+""")
 
-            # Guardamos el valor en session_state
-            st.session_state[f'input_{col}'] = input_value
-            input_data[col] = input_value  # Guardar el valor en el diccionario de entrada
-
-    # Botón para predecir el valor basado en los datos ingresados
-    if st.button("Predecir"):
-        input_array = np.array([list(input_data.values())])
-        prediction = model.predict(input_array)
-        st.write(f"### El valor estimado es: {prediction[0]:,.4f}")
-
-# Si el usuario elige "Cargar archivo Excel"
-elif input_method == "Cargar archivo Excel":
-    uploaded_file = st.file_uploader("Cargar archivo Excel", type="xlsx")
-    if uploaded_file is not None:
-        try:
-            # Leer el archivo Excel
-            data = pd.read_excel(uploaded_file)
-            
-            # Verificar si las columnas necesarias están presentes en el archivo
-            if all(col in data.columns for col in columns):
-                st.write("Datos cargados correctamente:")
-                st.write(data)
-
-                # Realizamos la predicción con los datos cargados
-                input_data_from_file = data[columns].values
-                prediction = model.predict(input_data_from_file)
-                st.write(f"### El valor estimado es: {prediction}")
-            else:
-                st.error(f"El archivo Excel debe contener las siguientes columnas: {', '.join(columns)}")
-        except Exception as e:
-            st.error(f"Error al procesar el archivo: {str(e)}")
-
-model1, model2 = load_model()
-
+# Sección para explorar el dataset
+st.sidebar.header("Exploración de datos")
 
 
 # Mostrar informacion en el dataset
@@ -220,7 +221,7 @@ if st.sidebar.checkbox("Mostrar datos faltantes"):
     missing_percentage = (missing_values / total_values) * 100
 
     # Mostrar resultado
-    st.write(f"### Información de la columna: {selected_column}")
+    st.write(f"### Información de la columna: `{selected_column}`")
     st.write(f"- **Valores totales:** {total_values}")
     st.write(f"- **Valores faltantes:** {missing_values} ({missing_percentage:.2f}%)")
     
@@ -246,7 +247,7 @@ if st.sidebar.checkbox("Información paciente"):
     row_index = st.number_input("Ingresa el índice de la fila a visualizar:", min_value=0, max_value=len(heartdisease)-1, step=1)
 
     if st.button("Mostrar fila seleccionada"):
-        st.write(f"### Datos de la fila {row_index}")
+        st.write(f"### Datos de la fila `{row_index}`")
         st.dataframe(heartdisease.iloc[[row_index]].iloc[:, 1:])
 
 #Matriz de correlacion
@@ -391,80 +392,301 @@ if st.sidebar.checkbox("Escalado de datos"):
         # Mostrar los datos escalados
         st.write(f"Vista previa de los datos escalados usando '{strategy}':")
         st.dataframe(scaled_data.head())
+
+
+#Modelo Clasico
+if st.sidebar.checkbox("Utilizar arboles de decisión"):
+    st.write("### Arboles de decisión")
+    st.write("""
+    El modelo utilizado consiste en un arbol con una profundidad de 3.
+    La base de datos fue codificada con One Hot Encoder y los datos no fueron escalados.
+    """)
+    
+    st.write("### Indique si desea hacer una predicción de manera manual o usar datos por defecto")
+    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'],key="madelo1_metodo_prediccion")
+    
+    if selected_column=='Por defecto':
+        # Buscar el archivo del modelo dentro de la carpeta extraída
+        st.write("### Indique los datos por defecto que desea uasr para la predicción")
+        data_model = st.selectbox("Selecciona un método para la predicción", ['Datos 1','Datos 2','Datos 3','Datos 4','Datos 5'],key="modelo1_eleccion_datos")
+
+        if data_model=='Datos 1':
+            n=0
+            prediction = model1.predict(df.iloc[n,:].to_frame().T)
+            if prediction==1 and y_test[n]==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+                st.write("Clasificación real","Cath", y_test[n])
+                st.write("El modelo acertó")                    
+            if prediction==0 and y_test[n]==0:
+                st.write("Predicción del modelo:","Normal", prediction)
+                st.write("Clasificación real","Normal", y_test[n])
+                st.write("El modelo acertó")
+            else:
+                st.write("Predicción del modelo:", prediction)
+                st.write("Clasificación real", y_test[n])
+                st.write("El modelo falló1")
+
+        if data_model=='Datos 2':
+            n=1
+            prediction = model1.predict(df.iloc[n,:].to_frame().T)
+            if prediction==1 and y_test[n]==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+                st.write("Clasificación real","Cath", y_test[n])
+                st.write("El modelo acertó")                    
+            if prediction==0 and y_test[n]==0:
+                st.write("Predicción del modelo:","Normal", prediction)
+                st.write("Clasificación real","Normal", y_test[n])
+                st.write("El modelo acertó")
+            else:
+                st.write("Predicción del modelo:", prediction)
+                st.write("Clasificación real", y_test[n])
+                st.write("El modelo falló2")
+        if data_model=='Datos 3':
+            n=2
+            prediction = model1.predict(df.iloc[n,:].to_frame().T)
+            if prediction==1 and y_test[n]==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+                st.write("Clasificación real","Cath", y_test[n])
+                st.write("El modelo acertó")                    
+            if prediction==0 and y_test[n]==0:
+                st.write("Predicción del modelo:","Normal", prediction)
+                st.write("Clasificación real","Normal", y_test[n])
+                st.write("El modelo acertó")
+            else:
+                st.write("Predicción del modelo:", prediction)
+                st.write("Clasificación real", y_test[n])
+                st.write("El modelo falló3")
+        if data_model=='Datos 4':
+            n=3
+            prediction = model1.predict(df.iloc[n,:].to_frame().T)
+            if prediction==1 and y_test[n]==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+                st.write("Clasificación real","Cath", y_test[n])
+                st.write("El modelo acertó")                    
+            if prediction==0 and y_test[n]==0:
+                st.write("Predicción del modelo:","Normal", prediction)
+                st.write("Clasificación real","Normal", y_test[n])
+                st.write("El modelo acertó")
+            else:
+                st.write("Predicción del modelo:", prediction)
+                st.write("Clasificación real", y_test[n])
+                st.write("El modelo falló4")
+        if data_model=='Datos 5':
+            n=4
+            prediction = model1.predict(df.iloc[n,:].to_frame().T)
+            if prediction==1 and y_test[n]==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+                st.write("Clasificación real","Cath", y_test[n])
+                st.write("El modelo acertó")                    
+            if prediction==0 and y_test[n]==0:
+                st.write("Predicción del modelo:","Normal", prediction)
+                st.write("Clasificación real","Normal", y_test[n])
+                st.write("El modelo acertó")
+            else:
+                st.write("Predicción del modelo:", prediction)
+                st.write("Clasificación real", y_test[n])
+                st.write("El modelo falló5")
+
+    if selected_column=='Manual':             
+        # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
+        data = {col: [0.0] for col in column_names}  # Inicializar numéricos en 0
+        for col in categorical_columns:
+            data[col] = [categorical_columns[col][0]]  # Inicializar con el primer valor de la lista
         
+        df = pd.DataFrame(data)
+        
+        # Convertir columnas categóricas a tipo "category" para que se muestren como dropdown en st.data_editor
+        for col in categorical_columns:
+            df[col] = df[col].astype("category")
+        
+        # Mostrar la tabla editable en Streamlit
+        st.write("### Introduce los datos para la predicción:")
+        edited_df = st.data_editor(df, key="editable_table")
+        
+        # Mostrar la tabla actualizada
+        st.write("#### Datos ingresados:")
+        st.write(edited_df)
+        
+        # Botón para generar la predicción
+        if st.button("Realizar predicción"):
+            st.write("Procesando los datos para la predicción...")
+            # Mostrar los datos originales
+            st.write(" **Datos originales:**")
+            st.write(edited_df)
+            
+            encoder, numerical_columns = load_encoder()
+            
+            # Simulación de datos nuevos
+            new_data = edited_df
+            # Separar variables numéricas y categóricas
+            new_data_categorical = new_data[encoder.feature_names_in_]  # Mantiene solo las categóricas
+            new_data_numerical = new_data[numerical_columns]  # Mantiene solo las numéricas
+            
+            # Codificar las variables categóricas
+            encoded_array = encoder.transform(new_data_categorical)
+            
+            # Convertir la salida a DataFrame con nombres de columnas codificadas
+            encoded_df = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out())
+            
+            # Concatenar las variables numéricas con las categóricas codificadas
+            final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
+    
+            prediction=model1.predict(final_data)
+            if prediction==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+            else:
+                st.write("Predicción del modelo:","Normal", prediction)
+
+
+
+
 # Modelo de redes neuronales
 if st.sidebar.checkbox("Utilizar redes Neuronales"): 
     st.write("### Redes Neuronales")
+    st.write("### dwd Neuronales")
+    
     
     st.write("""
     El modelo utilizado consiste en una red neuronal de una capa con 32 neuronas de entrada.
     La base de datos fue codificada con One Hot Encoder y estandarizada con StandardScaler.
     """)
 
-
-    
     st.write("### Indique si desea hacer una predicción de manera manual o usar datos por defecto")
-    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'])
+    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'],key="madelo2_metodo_prediccion")
     if selected_column=='Por defecto':
-        # Buscar el archivo del modelo dentro de la carpeta extraída
-        model_path = None
-        for root, _, files in os.walk(extract_path):
-            for file in files:
-                if file.endswith(".h5"):
-                    model_path = os.path.join(root, file)
-                    break
-                    
-        if model_path:
-            # Cargar el modelo
-            model = tf.keras.models.load_model(model_path)
-            #st.success("Modelo cargado correctamente.")
-            X = heartdisease.iloc[:, :-1]
-            y = heartdisease['Cath']
-            X_encoded = pd.get_dummies(X, drop_first=True,dtype= int)
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X_encoded)
-            label_encoder = LabelEncoder()
-            y_encoded = label_encoder.fit_transform(y)
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_encoded, test_size=0.2, random_state=42)
-
             st.write("### Indique los datos por defecto que desea uasr para la predicción")
-            data_model = st.selectbox("Selecciona un método para la predicción", ['Datos 1','Datos 2','Datos 3','Datos 4','Datos 5'])
+            data_model = st.selectbox("Selecciona un método para la predicción", ['Datos 1','Datos 2','Datos 3','Datos 4','Datos 5'],key="modelo2_eleccion_datos")
 
             if data_model=='Datos 1':
-                input_data = X_train[0].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
+                n=0
+                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
+                if prediction==1 and y_test[n]==1:
+                    st.write("Predicción del modelo:","Cath", prediction)
+                    st.write("Clasificación real","Cath", y_test[n])
+                    st.write("El modelo acertó")                    
+                if prediction==0 and y_test[n]==0:
+                    st.write("Predicción del modelo:","Normal", prediction)
+                    st.write("Clasificación real","Normal", y_test[n])
+                    st.write("El modelo acertó")
+                else:
+                    st.write("Predicción del modelo:", prediction)
+                    st.write("Clasificación real", y_test[n])
+                    st.write("El modelo falló")
+    
             if data_model=='Datos 2':
-                input_data = X_train[1].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
+                n=1
+                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
+                if prediction==1 and y_test[n]==1:
+                    st.write("Predicción del modelo:","Cath", prediction)
+                    st.write("Clasificación real","Cath", y_test[n])
+                    st.write("El modelo acertó")                    
+                if prediction==0 and y_test[n]==0:
+                    st.write("Predicción del modelo:","Normal", prediction)
+                    st.write("Clasificación real","Normal", y_test[n])
+                    st.write("El modelo acertó")
+                else:
+                    st.write("Predicción del modelo:", prediction)
+                    st.write("Clasificación real", y_test[n])
+                    st.write("El modelo falló")
             if data_model=='Datos 3':
-                input_data = X_train[2].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
+                n=2
+                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
+                if prediction==1 and y_test[n]==1:
+                    st.write("Predicción del modelo:","Cath", prediction)
+                    st.write("Clasificación real","Cath", y_test[n])
+                    st.write("El modelo acertó")                    
+                if prediction==0 and y_test[n]==0:
+                    st.write("Predicción del modelo:","Normal", prediction)
+                    st.write("Clasificación real","Normal", y_test[n])
+                    st.write("El modelo acertó")
+                else:
+                    st.write("Predicción del modelo:", prediction)
+                    st.write("Clasificación real", y_test[n])
+                    st.write("El modelo falló")
             if data_model=='Datos 4':
-                input_data = X_train[3].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
+                n=3
+                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
+                if prediction==1 and y_test[n]==1:
+                    st.write("Predicción del modelo:","Cath", prediction)
+                    st.write("Clasificación real","Cath", y_test[n])
+                    st.write("El modelo acertó")                    
+                if prediction==0 and y_test[n]==0:
+                    st.write("Predicción del modelo:","Normal", prediction)
+                    st.write("Clasificación real","Normal", y_test[n])
+                    st.write("El modelo acertó")
+                else:
+                    st.write("Predicción del modelo:", prediction)
+                    st.write("Clasificación real", y_test[n])
+                    st.write("El modelo falló")
             if data_model=='Datos 5':
-                input_data = X_train[4].reshape(1, -1)  # Excluir la última columna si es la etiqueta
-                st.write("Datos de entrada:", input_data)
-
+                n=4
+                prediction = np.argmax(model2.predict(df.iloc[n,:].to_frame().T))
+                if prediction==1 and y_test[n]==1:
+                    st.write("Predicción del modelo:","Cath", prediction)
+                    st.write("Clasificación real","Cath", y_test[n])
+                    st.write("El modelo acertó")                    
+                if prediction==0 and y_test[n]==0:
+                    st.write("Predicción del modelo:","Normal", prediction)
+                    st.write("Clasificación real","Normal", y_test[n])
+                    st.write("El modelo acertó")
+                else:
+                    st.write("Predicción del modelo:", prediction)
+                    st.write("Clasificación real", y_test[n])
+                    st.write("El modelo falló")
+    
+    if selected_column=='Manual':
+        # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
+        data = {col: [0.0] for col in column_names}  # Inicializar numéricos en 0
+        for col in categorical_columns:
+            data[col] = [categorical_columns[col][0]]  # Inicializar con el primer valor de la lista
+        
+        df = pd.DataFrame(data)
+        
+        # Convertir columnas categóricas a tipo "category" para que se muestren como dropdown en st.data_editor
+        for col in categorical_columns:
+            df[col] = df[col].astype("category")
+        
+        # Mostrar la tabla editable en Streamlit
+        st.write("### Introduce los datos para la predicción:")
+        edited_df = st.data_editor(df, key="editable_table")
+        
+        # Mostrar la tabla actualizada
+        st.write("#### Datos ingresados:")
+        st.write(edited_df)
+        
+        # Botón para generar la predicción
+        if st.button("Realizar predicción"):
+            st.write("Procesando los datos para la predicción...")
+            # Mostrar los datos originales
+            st.write(" **Datos originales:**")
+            st.write(edited_df)
             
-            # Realizar predicción
-            prediction = model.predict(input_data)
-            st.write("Predicción del modelo:", prediction)
-        else:
-            st.error("No se encontró un archivo .h5 en el ZIP. Verifica el contenido.")
+            encoder, numerical_columns = load_encoder()
+            
+            # Simulación de datos nuevos
+            new_data = edited_df
+            # Separar variables numéricas y categóricas
+            new_data_categorical = new_data[encoder.feature_names_in_]  # Mantiene solo las categóricas
+            new_data_numerical = new_data[numerical_columns]  # Mantiene solo las numéricas
+            
+            # Codificar las variables categóricas
+            encoded_array = encoder.transform(new_data_categorical)
+            
+            # Convertir la salida a DataFrame con nombres de columnas codificadas
+            encoded_df = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out())
+            
+            # Concatenar las variables numéricas con las categóricas codificadas
+            final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
+    
+            prediction=model2.predict(final_data)
+            if prediction==1:
+                st.write("Predicción del modelo:","Cath", prediction)
+            else:
+                st.write("Predicción del modelo:","Normal", prediction)
 
+        
 
-if hasattr(model1, 'get_params'):
-    print("El modelo tiene el método 'get_params'")
-    params = model1.get_params()
-    print(params)
-else:
-    print("El modelo no tiene el método 'get_params'")
-
+    
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
