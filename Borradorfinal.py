@@ -395,97 +395,65 @@ if st.sidebar.checkbox("Escalado de datos"):
 
 
 #Modelo Clasico
+import pandas as pd
+
 if st.sidebar.checkbox("Utilizar arboles de decisión"):
     st.write("### Arboles de decisión")
     st.write("""
     El modelo utilizado consiste en un arbol con una profundidad de 3.
     La base de datos fue codificada con One Hot Encoder y los datos no fueron escalados.
     """)
-    
-    st.write("### Indique si desea hacer una predicción de manera manual o usar datos por defecto")
-    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto','Manual'],key="madelo1_metodo_prediccion")
-    
-    if selected_column=='Por defecto':
-        # Buscar el archivo del modelo dentro de la carpeta extraída
-        st.write("### Indique los datos por defecto que desea uasr para la predicción")
-        data_model = st.selectbox("Selecciona un método para la predicción", ['Datos 1','Datos 2','Datos 3','Datos 4','Datos 5'],key="modelo1_eleccion_datos")
 
-        if data_model=='Datos 1':
-            n=0
-            prediction = model1.predict(df.iloc[n,:].to_frame().T)
-            if prediction==1 and y_test[n]==1:
-                st.write("Predicción del modelo:","Cath", prediction)
-                st.write("Clasificación real","Cath", y_test[n])
-                st.write("El modelo acertó")                    
-            if prediction==0 and y_test[n]==0:
-                st.write("Predicción del modelo:","Normal", prediction)
-                st.write("Clasificación real","Normal", y_test[n])
-                st.write("El modelo acertó")
-            else:
-                st.write("Predicción del modelo:", prediction)
-                st.write("Clasificación real", y_test[n])
-                st.write("El modelo falló1")
+    st.write("### Indique si desea hacer una predicción de manera manual o cargar una fila desde un archivo Excel")
+    selected_column = st.selectbox("Selecciona un método para la predicción", ['Por defecto', 'Manual', 'Cargar desde Excel'], key="madelo1_metodo_prediccion")
 
-        if data_model=='Datos 2':
-            n=1
-            prediction = model1.predict(df.iloc[n,:].to_frame().T)
-            if prediction==1 and y_test[n]==1:
+
+    if selected_column == 'Cargar desde Excel':
+        st.write("### Cargar archivo Excel para la predicción")
+        uploaded_file = st.file_uploader("Cargar archivo Excel", type=["xlsx"])
+
+        if uploaded_file is not None:
+            # Leer el archivo Excel
+            df_excel = pd.read_excel(uploaded_file)
+
+            # Mostrar las primeras filas para ver los datos
+            st.write("### Datos cargados del archivo Excel:")
+            st.write(df_excel.head())
+
+            # Pedir al usuario que seleccione la fila (podría ser por índice o número de fila)
+            row_number = st.number_input("Selecciona el número de fila para la predicción", min_value=0, max_value=len(df_excel)-1, value=0)
+
+            # Seleccionar la fila correspondiente
+            selected_row = df_excel.iloc[row_number, :]
+
+            # Mostrar la fila seleccionada
+            st.write("### Fila seleccionada para la predicción:")
+            st.write(selected_row)
+
+            # Preparar los datos para la predicción: aplicar One Hot Encoder y separación de variables numéricas
+            encoder, numerical_columns = load_encoder()
+
+            # Separar variables categóricas y numéricas
+            new_data_categorical = selected_row[encoder.feature_names_in_].to_frame().T  # Convertir a DataFrame
+            new_data_numerical = selected_row[numerical_columns].to_frame().T  # Convertir a DataFrame
+
+            # Codificar las variables categóricas
+            encoded_array = encoder.transform(new_data_categorical)
+
+            # Convertir la salida a DataFrame con nombres de columnas codificadas
+            encoded_df = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out())
+
+            # Concatenar las variables numéricas con las categóricas codificadas
+            final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
+
+            # Realizar la predicción
+            prediction = model1.predict(final_data)
+
+            if prediction == 1:
                 st.write("Predicción del modelo:","Cath", prediction)
-                st.write("Clasificación real","Cath", y_test[n])
-                st.write("El modelo acertó")                    
-            if prediction==0 and y_test[n]==0:
-                st.write("Predicción del modelo:","Normal", prediction)
-                st.write("Clasificación real","Normal", y_test[n])
-                st.write("El modelo acertó")
             else:
-                st.write("Predicción del modelo:", prediction)
-                st.write("Clasificación real", y_test[n])
-                st.write("El modelo falló2")
-        if data_model=='Datos 3':
-            n=2
-            prediction = model1.predict(df.iloc[n,:].to_frame().T)
-            if prediction==1 and y_test[n]==1:
-                st.write("Predicción del modelo:","Cath", prediction)
-                st.write("Clasificación real","Cath", y_test[n])
-                st.write("El modelo acertó")                    
-            if prediction==0 and y_test[n]==0:
                 st.write("Predicción del modelo:","Normal", prediction)
-                st.write("Clasificación real","Normal", y_test[n])
-                st.write("El modelo acertó")
-            else:
-                st.write("Predicción del modelo:", prediction)
-                st.write("Clasificación real", y_test[n])
-                st.write("El modelo falló3")
-        if data_model=='Datos 4':
-            n=3
-            prediction = model1.predict(df.iloc[n,:].to_frame().T)
-            if prediction==1 and y_test[n]==1:
-                st.write("Predicción del modelo:","Cath", prediction)
-                st.write("Clasificación real","Cath", y_test[n])
-                st.write("El modelo acertó")                    
-            if prediction==0 and y_test[n]==0:
-                st.write("Predicción del modelo:","Normal", prediction)
-                st.write("Clasificación real","Normal", y_test[n])
-                st.write("El modelo acertó")
-            else:
-                st.write("Predicción del modelo:", prediction)
-                st.write("Clasificación real", y_test[n])
-                st.write("El modelo falló4")
-        if data_model=='Datos 5':
-            n=4
-            prediction = model1.predict(df.iloc[n,:].to_frame().T)
-            if prediction==1 and y_test[n]==1:
-                st.write("Predicción del modelo:","Cath", prediction)
-                st.write("Clasificación real","Cath", y_test[n])
-                st.write("El modelo acertó")                    
-            if prediction==0 and y_test[n]==0:
-                st.write("Predicción del modelo:","Normal", prediction)
-                st.write("Clasificación real","Normal", y_test[n])
-                st.write("El modelo acertó")
-            else:
-                st.write("Predicción del modelo:", prediction)
-                st.write("Clasificación real", y_test[n])
-                st.write("El modelo falló5")
+
 
     if selected_column=='Manual':             
         # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
