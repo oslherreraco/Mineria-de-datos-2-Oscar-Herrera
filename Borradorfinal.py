@@ -679,6 +679,10 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
+
+import pandas as pd
+import streamlit as st
+
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
@@ -690,7 +694,7 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         model1_params = model1.get_params()  # Extraer los hiperparámetros del modelo
 
         # Convertir los hiperparámetros a un formato adecuado para una tabla
-        model1_params_table = [(key, value) for key, value in model1_params.items()]
+        model1_params_table = [(key, value) for key, value in model1_params.items()] 
 
         # Limpiar los valores None o <NA> y reemplazarlos con un guion o valor vacío
         cleaned_model1_params = [
@@ -720,18 +724,23 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear DataFrame para mostrar en formato vertical
-        params_vertical = []
-        for layer in model2_params:
-            layer_name = layer["Capa"]
-            for param, value in layer["Hiperparámetros"].items():
-                params_vertical.append([layer_name, param, value])
+        # Crear un DataFrame con las capas como columnas
+        layers_info = {}
 
-        # Convertir la lista de hiperparámetros en un DataFrame
-        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
+        for i, layer in enumerate(model2_params):
+            layer_name = f"Capa {i+1} ({layer['Capa']})"
+            layer_config = layer["Hiperparámetros"]
+
+            for param, value in layer_config.items():
+                if param not in layers_info:
+                    layers_info[param] = []
+                layers_info[param].append(value)
+
+        # Convertir el diccionario en un DataFrame
+        model2_params_df = pd.DataFrame(layers_info)
 
         # Establecer el ancho de las columnas para que se ajusten adecuadamente
-        model2_params_df.style.set_properties(subset=["Capa", "Hiperparámetro", "Valor"], width="300px")
+        model2_params_df.style.set_properties(subset=model2_params_df.columns, width="300px")
 
         # Mostrar la tabla con estilo
         st.dataframe(model2_params_df, use_container_width=True)
