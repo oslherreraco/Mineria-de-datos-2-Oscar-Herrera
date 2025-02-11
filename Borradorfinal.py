@@ -681,6 +681,14 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 import pandas as pd
 import streamlit as st
 
+additional_params = {
+    'Depth': 1,
+    'Epochs': 11,
+    'Batch Size': 58,
+    'Accuracy': 0.704918,
+    'Loss': 0.6126
+}
+
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
@@ -757,15 +765,22 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
                 learning_rate = optimizer.learning_rate.numpy()
 
-            st.write(f"##### Learning Rate: {learning_rate}")
+      
+       # Agregar el learning rate a los parámetros generales
+        additional_params['Learning Rate'] = learning_rate
 
-        # Información adicional sobre las épocas, batch_size y otros parámetros de entrenamiento
-        st.write("##### Información adicional:")
-        st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
+        # Crear un DataFrame para los parámetros generales
+        additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
+
+        # Ajustar los decimales de los valores para que se muestren con hasta 6 decimales
+        additional_params_df["Valor"] = additional_params_df["Valor"].apply(lambda x: f"{x:.6f}" if isinstance(x, (float, int)) else x)
+
+        # Mostrar la tabla de los parámetros generales
+        st.write("##### Parámetros Generales del Modelo")
+        st.dataframe(additional_params_df, use_container_width=True)
+
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
-
-
 
 
 
