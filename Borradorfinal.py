@@ -504,9 +504,6 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
                 st.write("Predicción del modelo:","Cath", prediction)
             else:
                 st.write("Predicción del modelo:","Normal", prediction)
-import pandas as pd
-import numpy as np
-import streamlit as st
 
 if st.sidebar.checkbox("Utilizar redes Neuronales"): 
     st.write("### Redes Neuronales")
@@ -537,7 +534,19 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             # Asegurarse de que el dataframe tenga los datos necesarios.
             if not df.empty:
                 # Realizar la predicción utilizando el modelo de redes neuronales
-                prediction = np.argmax(model2.predict(df))
+                prediction_probabilities = model2.predict(df)
+                
+                # Probabilidades de la clase 0 y 1
+                prob_normal = 1 - prediction_probabilities
+                prob_cath = prediction_probabilities
+                
+                # Mostrar las probabilidades de cada clase
+                st.write(f"### Probabilidades:")
+                st.write(f"Probabilidad de Normal: {prob_normal[0][0]:.4f}")
+                st.write(f"Probabilidad de Cath: {prob_cath[0][0]:.4f}")
+                
+                # Decidir la predicción (usando un umbral de 0.5)
+                prediction = 1 if prob_cath > 0.5 else 0
                 
                 if prediction == 1:
                     st.write("Predicción del modelo: Cath")
@@ -546,7 +555,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             else:
                 st.write("No se encontraron datos en el archivo.")
     
-    if selected_column=='Manual':
+    if selected_column == 'Manual':
         # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
         data = {col: [0.0] for col in column_names}  # Inicializar numéricos en 0
         for col in categorical_columns:
@@ -590,11 +599,26 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             # Concatenar las variables numéricas con las categóricas codificadas
             final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
     
-            prediction=model2.predict(final_data)
-            if prediction==1:
-                st.write("Predicción del modelo:","Cath", prediction)
+            # Realizar la predicción
+            prediction_probabilities = model2.predict(final_data)
+            
+            # Probabilidades de la clase 0 y 1
+            prob_normal = 1 - prediction_probabilities
+            prob_cath = prediction_probabilities
+            
+            # Mostrar las probabilidades de cada clase
+            st.write(f"### Probabilidades:")
+            st.write(f"Probabilidad de Normal: {prob_normal[0][0]:.4f}")
+            st.write(f"Probabilidad de Cath: {prob_cath[0][0]:.4f}")
+            
+            # Decidir la predicción (usando un umbral de 0.5)
+            prediction = 1 if prob_cath > 0.5 else 0
+            
+            if prediction == 1:
+                st.write("Predicción del modelo: Cath")
             else:
-                st.write("Predicción del modelo:","Normal", prediction)
+                st.write("Predicción del modelo: Normal")
+
         
 
     
