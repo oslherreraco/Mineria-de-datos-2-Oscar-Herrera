@@ -677,6 +677,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Normal")
 
 
+
 import pandas as pd
 import streamlit as st
 
@@ -703,10 +704,6 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
 
         # Ajustar el ancho de las columnas para que no se corte el texto
-        model1_params_df.style.set_properties(subset=["Hiperparámetro", "Valor"], width="400px", 
-                                              min_width="200px", max_width="600px", text_align="left")
-
-        # Mostrar la tabla con estilo
         st.dataframe(model1_params_df, use_container_width=True)
 
     # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
@@ -722,21 +719,24 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear DataFrame para mostrar en formato vertical
-        params_vertical = []
+        # Crear un DataFrame vacío para los hiperparámetros por capa
+        params_by_layer = {}
+
+        # Llenar el diccionario con los hiperparámetros por capa
         for layer in model2_params:
             layer_name = layer["Capa"]
             for param, value in layer["Hiperparámetros"].items():
-                params_vertical.append([layer_name, param, value])
+                if param not in params_by_layer:
+                    params_by_layer[param] = []
+                params_by_layer[param].append(value)
 
-        # Convertir la lista de hiperparámetros en un DataFrame
-        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
+        # Crear el DataFrame transpuesto
+        model2_params_df = pd.DataFrame(params_by_layer)
 
-        # Ajustar el ancho de las columnas y permitir que los valores largos no se corten
-        model2_params_df.style.set_properties(subset=["Capa", "Hiperparámetro", "Valor"], width="400px", 
-                                              min_width="200px", max_width="600px", text_align="left")
+        # Establecer los hiperparámetros como índices (filas)
+        model2_params_df.index = [f"Capa {i+1}" for i in range(len(model2_params_df))]
 
-        # Mostrar la tabla con estilo
+        # Ajustar el estilo para que los valores largos no se corten
         st.dataframe(model2_params_df, use_container_width=True)
 
         # Obtener el learning rate
