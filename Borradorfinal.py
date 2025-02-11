@@ -679,44 +679,42 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
-import streamlit as st
-import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
 
-# Supongamos que tienes una función `load_encoder` que te devuelve el encoder y las columnas numéricas
+# Función para cargar el encoder y las columnas numéricas
 def load_encoder():
-    # Esta es una función ficticia para ilustrar
-    encoder = OneHotEncoder(sparse=False)  # Usamos el OneHotEncoder de sklearn
+    # Definimos un encoder OneHot
+    encoder = OneHotEncoder(sparse=False)  # Usamos OneHotEncoder sin matrices dispersas
     numerical_columns = ['Age', 'Height', 'Weight']  # Ejemplo de columnas numéricas
     return encoder, numerical_columns
 
-# Definir la función para obtener las columnas utilizadas por el modelo
+# Función para obtener las columnas utilizadas por el modelo
 def get_feature_columns(encoder, numerical_columns):
     """
-    Esta función devuelve las columnas de características utilizadas por el modelo (tanto categóricas como numéricas).
-    Recibe el encoder (para las variables categóricas) y las columnas numéricas como entrada.
+    Devuelve las columnas de características que el modelo utiliza.
+    Recibe el encoder (para las variables categóricas) y las columnas numéricas.
     """
-    # Obtener los nombres de las columnas categóricas codificadas
+    # Obtener las columnas categóricas
     categorical_columns = encoder.get_feature_names_out()
     
-    # Combinar las columnas categóricas codificadas con las numéricas
+    # Combinar las columnas categóricas con las numéricas
     all_columns = list(categorical_columns) + numerical_columns
     
     return all_columns
 
-# Código de Streamlit
+# Ejemplo de código de Streamlit
 if st.sidebar.checkbox("Mostrar columnas del modelo"):
     st.write("### Columnas utilizadas por el modelo")
     
-    # Inicializamos el encoder y las columnas numéricas
+    # Inicializar el encoder y las columnas numéricas
     encoder, numerical_columns = load_encoder()
     
-    # Llamamos a la función para obtener las columnas que usará el modelo
+    # Llamar a la función para obtener las columnas que el modelo usará
     model_columns = get_feature_columns(encoder, numerical_columns)
     
     # Mostrar las columnas utilizadas por el modelo
     st.write("Las columnas utilizadas por el modelo son:")
     st.write(model_columns)
+
 
 
         
