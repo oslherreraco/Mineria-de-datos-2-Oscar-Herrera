@@ -678,7 +678,8 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
-
+import pandas as pd
+import streamlit as st
 
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
@@ -701,7 +702,12 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
         # Mostrar los parámetros del modelo 1 como una tabla
         model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
-        st.dataframe(model1_params_df)
+
+        # Establecer el ancho de las columnas para que se ajusten adecuadamente
+        model1_params_df.style.set_properties(subset=["Hiperparámetro", "Valor"], width="300px")
+
+        # Mostrar la tabla con estilo
+        st.dataframe(model1_params_df, use_container_width=True)
 
     # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
     if hasattr(model2, 'get_config'):
@@ -726,8 +732,11 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         # Convertir la lista de hiperparámetros en un DataFrame
         model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
 
-        # Mostrar los parámetros del modelo de la red neuronal en una tabla
-        st.dataframe(model2_params_df)
+        # Establecer el ancho de las columnas para que se ajusten adecuadamente
+        model2_params_df.style.set_properties(subset=["Capa", "Hiperparámetro", "Valor"], width="300px")
+
+        # Mostrar la tabla con estilo
+        st.dataframe(model2_params_df, use_container_width=True)
 
         # Obtener el learning rate
         if hasattr(model2, 'optimizer'):
@@ -744,4 +753,8 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
+
+
+
+
 
