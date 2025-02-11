@@ -677,6 +677,8 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Normal")
 
 
+
+
 additional_params = {
     'Depth': 1,
     'Epochs': 11,
@@ -713,10 +715,10 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         # Mostrar la tabla con estilo
         st.dataframe(model1_params_df, use_container_width=True)
 
-        # Agregar tabla con el Accuracy del modelo de árbol de decisión
+        # Agregar tabla con el Accuracy del modelo de árbol de decisión (con 6 decimales)
         st.write("##### Accuracy del modelo de clasificación (Árbol de Decisión)")
         accuracy_params = {
-            "Accuracy": 0.836065  # Aquí pones el Accuracy del árbol de decisión
+            "Accuracy": f"{0.836065:.6f}"  # Formatear el Accuracy con 6 decimales
         }
         accuracy_df = pd.DataFrame(list(accuracy_params.items()), columns=["Métrica", "Valor"])
         st.dataframe(accuracy_df, use_container_width=True)
@@ -792,7 +794,6 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
-
 
 
 
