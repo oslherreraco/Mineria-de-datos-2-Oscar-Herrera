@@ -678,8 +678,18 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
+
 import pandas as pd
 import streamlit as st
+
+# Datos de hiperparámetros adicionales
+additional_params = {
+    'Depth': 1,
+    'Epochs': 11,
+    'Batch Size': 58,
+    'Accuracy': 0.704918,
+    'Loss': 0.6126
+}
 
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
@@ -702,8 +712,6 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
         # Mostrar los parámetros del modelo 1 como una tabla
         model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
-
-        # Ajustar el ancho de las columnas para que no se corte el texto
         st.dataframe(model1_params_df, use_container_width=True)
 
     # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
@@ -719,41 +727,27 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear un DataFrame vacío para los hiperparámetros por capa
-        params_by_layer = {}
-
-        # Llenar el diccionario con los hiperparámetros por capa
+        # Crear DataFrame para mostrar en formato vertical
+        params_vertical = []
         for layer in model2_params:
             layer_name = layer["Capa"]
             for param, value in layer["Hiperparámetros"].items():
-                if param not in params_by_layer:
-                    params_by_layer[param] = []
-                params_by_layer[param].append(value)
+                params_vertical.append([layer_name, param, value])
 
-        # Crear el DataFrame transpuesto
-        model2_params_df = pd.DataFrame(params_by_layer)
+        # Convertir la lista de hiperparámetros en un DataFrame
+        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
 
-        # Transponer el DataFrame para tener una columna por capa y las filas como los hiperparámetros
-        model2_params_df = model2_params_df.T
+        # Convertir los datos adicionales a un DataFrame
+        additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
+        
+        # Añadir los parámetros adicionales a la tabla de parámetros de la red neuronal
+        additional_params_df['Capa'] = 'Red Neuronal'  # Colocar un valor para la columna 'Capa' en los parámetros adicionales
 
-        # Establecer los nombres de las filas como los hiperparámetros
-        model2_params_df.columns = [f"Capa {i+1}" for i in range(len(model2_params_df.columns))]
+        # Concatenar las tablas de parámetros de las capas y los parámetros adicionales
+        final_df = pd.concat([model2_params_df, additional_params_df], ignore_index=True)
 
-        # Mostrar la tabla con los parámetros ajustados y el texto largo ajustado
-        st.write("#### Hiperparámetros de la red neuronal por capa:")
-
-        # Mostrar la tabla con estilo sin el 'subset'
-        st.dataframe(
-            model2_params_df.style
-            .set_properties(
-                **{
-                    'white-space': 'pre-wrap',  # Esto asegura que el texto largo se ajuste automáticamente
-                    'max-width': 'none',  # Evita que las celdas se limiten en tamaño
-                    'width': '300px'  # Establece el ancho de las celdas
-                }
-            ),
-            use_container_width=True
-        )
+        # Mostrar la tabla con los hiperparámetros
+        st.dataframe(final_df, use_container_width=True)
 
         # Obtener el learning rate
         if hasattr(model2, 'optimizer'):
@@ -765,11 +759,9 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
             st.write(f"##### Learning Rate: {learning_rate}")
 
-        # Información adicional sobre las épocas, batch_size y otros parámetros de entrenamiento
-        st.write("##### Información adicional:")
-        st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
+
 
 
 
