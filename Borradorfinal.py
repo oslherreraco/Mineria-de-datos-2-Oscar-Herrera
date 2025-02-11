@@ -739,15 +739,21 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         # Establecer los nombres de las filas como los hiperparámetros
         model2_params_df.columns = [f"Capa {i+1}" for i in range(len(model2_params_df.columns))]
 
-        # Mostrar la tabla con ajustes de celdas y texto largo ajustado
-        st.write("#### Hiperparámetros de la red neuronal por capa (ajustado):")
-        
-        # Mostrar la tabla con estilo y con un tamaño de celda adecuado para el texto largo
-        st.dataframe(model2_params_df.style.set_properties(subset=["Capa", "Hiperparámetro", "Valor"], **{
-            'white-space': 'pre-wrap',  # Esto asegura que el texto largo se ajuste automáticamente
-            'max-width': 'none',  # Evita que las celdas se limiten en tamaño
-            'width': '300px'  # Establece el ancho de las celdas
-        }), use_container_width=True)
+        # Mostrar la tabla con los parámetros ajustados y el texto largo ajustado
+        st.write("#### Hiperparámetros de la red neuronal por capa:")
+
+        # Mostrar la tabla con estilo sin el 'subset'
+        st.dataframe(
+            model2_params_df.style
+            .set_properties(
+                **{
+                    'white-space': 'pre-wrap',  # Esto asegura que el texto largo se ajuste automáticamente
+                    'max-width': 'none',  # Evita que las celdas se limiten en tamaño
+                    'width': '300px'  # Establece el ancho de las celdas
+                }
+            ),
+            use_container_width=True
+        )
 
         # Obtener el learning rate
         if hasattr(model2, 'optimizer'):
@@ -764,7 +770,6 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
-
 
 
 
