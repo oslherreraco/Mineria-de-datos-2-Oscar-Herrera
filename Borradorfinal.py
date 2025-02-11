@@ -505,6 +505,8 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
             else:
                 st.write("Predicción del modelo:","Normal", prediction)
                 
+
+
 if st.sidebar.checkbox("Utilizar redes Neuronales"): 
     st.write("### Redes Neuronales")
            
@@ -548,14 +550,34 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             if extra_columns:
                 st.write("Las siguientes columnas no deberían estar presentes:", extra_columns)
 
-            # Asegurarse de que las columnas estén en el mismo orden que las espera el modelo
-            df = df[expected_columns]  # Ajusta el DataFrame al orden de las columnas esperadas
-            st.write("Datos ajustados para la predicción:", df.head())
+            # Paso 1: Codificar las columnas categóricas
+            # Asumimos que las columnas categóricas son aquellas en la lista `categorical_columns`
+            categorical_columns = list(set(encoder.feature_names_in_) & set(loaded_columns))  # Filtra las columnas categóricas presentes
 
-            # Asegurarse de que el dataframe tenga los datos necesarios.
-            if not df.empty:
-                # Realizar la predicción utilizando el modelo de redes neuronales
-                prediction_probabilities = model2.predict(df)
+            # Si hay columnas categóricas, las codificamos
+            if categorical_columns:
+                # Codificar las variables categóricas
+                categorical_data = df[categorical_columns]
+                encoded_array = encoder.transform(categorical_data)
+                encoded_df = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out())
+                st.write("Datos categóricos codificados:", encoded_df.head())
+            else:
+                st.write("No se encontraron columnas categóricas en los datos.")
+
+            # Paso 2: Separar columnas numéricas
+            numerical_columns_in_data = list(set(numerical_columns) & set(loaded_columns))  # Filtra las columnas numéricas presentes
+            numerical_data = df[numerical_columns_in_data]
+            
+            # Paso 3: Concatenar las columnas numéricas con las columnas categóricas codificadas
+            final_data = pd.concat([numerical_data, encoded_df], axis=1)
+
+            # Paso 4: Asegurarse de que el DataFrame tenga las columnas en el orden esperado
+            final_data = final_data[expected_columns]  # Ajustar al orden de las columnas esperadas por el modelo
+            st.write("Datos ajustados para la predicción:", final_data.head())
+
+            # Paso 5: Realizar la predicción
+            if not final_data.empty:
+                prediction_probabilities = model2.predict(final_data)
 
                 # Probabilidades de la clase 0 y 1
                 prob_normal = 1 - prediction_probabilities
@@ -574,7 +596,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 else:
                     st.write("Predicción del modelo: Normal")
             else:
-                st.write("No se encontraron datos en el archivo.")
+                st.write("No se encontraron datos válidos para hacer la predicción.")
     
     if selected_column == 'Manual':
         # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
@@ -639,6 +661,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Cath")
             else:
                 st.write("Predicción del modelo: Normal")
+
 
 
         
