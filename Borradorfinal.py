@@ -681,15 +681,6 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 import pandas as pd
 import streamlit as st
 
-# Datos de hiperparámetros generales
-additional_params = {
-    'Depth': 1,
-    'Epochs': 11,
-    'Batch Size': 58,
-    'Accuracy': 0.704918,
-    'Loss': 0.6126
-}
-
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
@@ -701,7 +692,7 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         model1_params = model1.get_params()  # Extraer los hiperparámetros del modelo
 
         # Convertir los hiperparámetros a un formato adecuado para una tabla
-        model1_params_table = [(key, value) for key, value in model1_params.items()]
+        model1_params_table = [(key, value) for key, value in model1_params.items()] 
 
         # Limpiar los valores None o <NA> y reemplazarlos con un guion o valor vacío
         cleaned_model1_params = [
@@ -711,6 +702,11 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
         # Mostrar los parámetros del modelo 1 como una tabla
         model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
+
+        # Establecer el ancho de las columnas para que se ajusten adecuadamente
+        model1_params_df.style.set_properties(subset=["Hiperparámetro", "Valor"], width="300px")
+
+        # Mostrar la tabla con estilo
         st.dataframe(model1_params_df, use_container_width=True)
 
     # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
@@ -726,34 +722,31 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear un DataFrame para mostrar los hiperparámetros de las capas por columna
-        # Obtenemos los nombres de las capas
-        layer_names = [layer["Capa"] for layer in model2_params]
-        # Obtenemos todos los parámetros posibles en las capas
-        param_names = list(set([param for layer in model2_params for param in layer["Hiperparámetros"].keys()]))
-        
-        # Creamos la tabla con una columna por capa
-        param_values = []
-        for param_name in param_names:
-            row = [param_name]  # Comenzamos con el nombre del parámetro
-            for layer in model2_params:
-                layer_config = layer["Hiperparámetros"]
-                value = layer_config.get(param_name, "-")
-                
-                # Convertir el valor a cadena en caso de que sea un diccionario o lista
-                if isinstance(value, (dict, list)):
-                    value = str(value)
-                row.append(value)  # Agregamos el valor de cada capa para este parámetro
-            param_values.append(row)
+        # Crear un diccionario para almacenar los hiperparámetros de cada capa
+        layers_info = {}
 
-        # Convertir a DataFrame
-        model2_params_df = pd.DataFrame(param_values, columns=["Hiperparámetro"] + layer_names)
+        for i, layer in enumerate(model2_params):
+            layer_name = f"Capa {i+1} ({layer['Capa']})"
+            layer_config = layer["Hiperparámetros"]
 
-        # Asegurarnos de que los valores numéricos se muestren con hasta 6 decimales
-        for col in model2_params_df.columns[1:]:
-            model2_params_df[col] = model2_params_df[col].apply(lambda x: f"{x:.6f}" if isinstance(x, (int, float)) else x)
+            for param, value in layer_config.items():
+                if param not in layers_info:
+                    layers_info[param] = []
+                layers_info[param].append(value)
 
-        st.write("##### Parámetros por Capa de la Red Neuronal")
+        # Convertir el diccionario en un DataFrame con los hiperparámetros como filas
+        model2_params_df = pd.DataFrame(layers_info)
+
+        # Transponer la tabla para que las capas estén como columnas y los hiperparámetros como filas
+        model2_params_df = model2_params_df.transpose()
+
+        # Renombrar las columnas para reflejar el número de capa
+        model2_params_df.columns = [f"Capa {i+1}" for i in range(len(model2_params))]
+
+        # Establecer el ancho de las columnas para que se ajusten adecuadamente
+        model2_params_df.style.set_properties(subset=model2_params_df.columns, width="300px")
+
+        # Mostrar la tabla con estilo
         st.dataframe(model2_params_df, use_container_width=True)
 
         # Obtener el learning rate
@@ -764,21 +757,14 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
                 learning_rate = optimizer.learning_rate.numpy()
 
-        # Agregar el learning rate a los parámetros generales
-        additional_params['Learning Rate'] = learning_rate
+            st.write(f"##### Learning Rate: {learning_rate}")
 
-        # Crear un DataFrame para los parámetros generales
-        additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
-
-        # Ajustar los decimales de los valores para que se muestren con hasta 6 decimales
-        additional_params_df["Valor"] = additional_params_df["Valor"].apply(lambda x: f"{x:.6f}" if isinstance(x, (float, int)) else x)
-
-        # Mostrar la tabla de los parámetros generales
-        st.write("##### Parámetros Generales del Modelo")
-        st.dataframe(additional_params_df, use_container_width=True)
-
+        # Información adicional sobre las épocas, batch_size y otros parámetros de entrenamiento
+        st.write("##### Información adicional:")
+        st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
+
 
 
 
