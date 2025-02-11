@@ -678,6 +678,8 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
+import pandas as pd
+import streamlit as st
 
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
@@ -735,9 +737,12 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         model2_params_df = model2_params_df.T
 
         # Establecer los nombres de las filas como los hiperparámetros
-        model2_params_df.columns = [f"Hiperparámetro {i+1}" for i in range(len(model2_params_df.columns))]
+        model2_params_df.columns = [f"Capa {i+1}" for i in range(len(model2_params_df.columns))]
 
-        # Ajustar el estilo para que los valores largos no se corten
+        # Mostrar la tabla con ajustes de celdas y texto largo ajustado
+        st.write("#### Hiperparámetros de la red neuronal por capa (ajustado):")
+        
+        # Mostrar la tabla con estilo
         st.dataframe(model2_params_df, use_container_width=True)
 
         # Obtener el learning rate
