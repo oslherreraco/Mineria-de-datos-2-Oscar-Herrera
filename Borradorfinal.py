@@ -679,6 +679,31 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
+
+
+# Definición de la función
+def get_feature_columns(encoder, numerical_columns):
+    """
+    Esta función devuelve las columnas de características utilizadas por el modelo (tanto categóricas como numéricas).
+    Recibe el encoder (para las variables categóricas) y las columnas numéricas como entrada.
+    """
+    # Obtener los nombres de las columnas categóricas codificadas
+    categorical_columns = encoder.get_feature_names_out()
+    
+    # Combinar las columnas categóricas codificadas con las numéricas
+    all_columns = list(categorical_columns) + numerical_columns
+    
+    return all_columns
+
+# Llamada a la función inmediatamente después de su definición
+encoder, numerical_columns = load_encoder()  # Suponiendo que tienes una función que carga el encoder y las columnas numéricas
+
+# Llamamos a la función para obtener las columnas que usará el modelo
+columns = get_feature_columns(encoder, numerical_columns)
+
+# Mostrar las columnas obtenidas
+print("Columnas utilizadas por el modelo:", columns)
+
         
 
     
