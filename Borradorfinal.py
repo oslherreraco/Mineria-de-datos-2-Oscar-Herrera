@@ -680,50 +680,10 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
-# Función para cargar el encoder y las columnas numéricas
-def load_encoder():
-    # Definimos un encoder OneHot
-    encoder = OneHotEncoder(sparse=False)  # Usamos OneHotEncoder sin matrices dispersas
-    numerical_columns = ['Age', 'Height', 'Weight']  # Ejemplo de columnas numéricas
-    return encoder, numerical_columns
-
-# Función para obtener las columnas utilizadas por el modelo
-def get_feature_columns(encoder, numerical_columns):
-    """
-    Devuelve las columnas de características que el modelo utiliza.
-    Recibe el encoder (para las variables categóricas) y las columnas numéricas.
-    """
-    # Obtener las columnas categóricas
-    categorical_columns = encoder.get_feature_names_out()
-    
-    # Combinar las columnas categóricas con las numéricas
-    all_columns = list(categorical_columns) + numerical_columns
-    
-    return all_columns
-
-# Ejemplo de código de Streamlit
-if st.sidebar.checkbox("Mostrar columnas del modelo"):
-    st.write("### Columnas utilizadas por el modelo")
-    
-    # Inicializar el encoder y las columnas numéricas
-    encoder, numerical_columns = load_encoder()
-    
-    # Llamar a la función para obtener las columnas que el modelo usará
-    model_columns = get_feature_columns(encoder, numerical_columns)
-    
-    # Mostrar las columnas utilizadas por el modelo
-    st.write("Las columnas utilizadas por el modelo son:")
-    st.write(model_columns)
-
-
-
-        
-
-    
 # Colocar el checkbox en la barra lateral
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
-
+    
     # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
     if hasattr(model1, 'get_params'):
         st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
@@ -748,9 +708,6 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
 
         # Obtener los hiperparámetros de la red neuronal
-        model2_config = model2.get_config()
-
-        # Mostrar la configuración de la red neuronal en un formato legible
         model2_params = []
         for layer in model2.layers:
             layer_info = {
@@ -759,8 +716,17 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Mostrar los parámetros del modelo en un DataFrame
-        model2_params_df = pd.DataFrame(model2_params)
+        # Crear DataFrame para mostrar en formato vertical
+        params_vertical = []
+        for layer in model2_params:
+            layer_name = layer["Capa"]
+            for param, value in layer["Hiperparámetros"].items():
+                params_vertical.append([layer_name, param, value])
+
+        # Convertir la lista de hiperparámetros en un DataFrame
+        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
+
+        # Mostrar los parámetros del modelo de la red neuronal en una tabla
         st.dataframe(model2_params_df)
 
         # Obtener el learning rate
@@ -779,6 +745,3 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
 
-
-
-# Continuación del flujo para predicción manual o por defecto
