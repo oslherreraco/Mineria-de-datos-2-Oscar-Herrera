@@ -677,10 +677,6 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Normal")
 
 
-
-import pandas as pd
-import streamlit as st
-
 additional_params = {
     'Depth': 1,
     'Epochs': 11,
@@ -693,7 +689,7 @@ additional_params = {
 if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
     st.write("#### Hiperparámetros del modelo")
     
-    # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
+    # Mostrar los hiperparámetros del modelo 1 (modelo de clasificación - árbol de decisión)
     if hasattr(model1, 'get_params'):
         st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
 
@@ -716,6 +712,14 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
         # Mostrar la tabla con estilo
         st.dataframe(model1_params_df, use_container_width=True)
+
+        # Agregar tabla con el Accuracy del modelo de árbol de decisión
+        st.write("##### Accuracy del modelo de clasificación (Árbol de Decisión)")
+        accuracy_params = {
+            "Accuracy": 0.836065  # Aquí pones el Accuracy del árbol de decisión
+        }
+        accuracy_df = pd.DataFrame(list(accuracy_params.items()), columns=["Métrica", "Valor"])
+        st.dataframe(accuracy_df, use_container_width=True)
 
     # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
     if hasattr(model2, 'get_config'):
@@ -788,6 +792,8 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
+
+
 
 
 
