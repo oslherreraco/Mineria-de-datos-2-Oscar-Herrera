@@ -504,7 +504,7 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
                 st.write("Predicción del modelo:","Cath", prediction)
             else:
                 st.write("Predicción del modelo:","Normal", prediction)
-
+                
 if st.sidebar.checkbox("Utilizar redes Neuronales"): 
     st.write("### Redes Neuronales")
            
@@ -527,15 +527,36 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             df = pd.read_excel(uploaded_file)
             st.write("Datos cargados:", df.head())
 
-            # Asumimos que el archivo tiene columnas con los datos de entrada.
-            # Necesitarás ajustar esto según el formato del archivo.
-            st.write("### Realizando la predicción con los datos cargados")
+            # Obtener las columnas que espera el modelo
+            encoder, numerical_columns = load_encoder()
+            encoded_column_names = encoder.get_feature_names_out()
+            numerical_column_names = numerical_columns
+
+            # Las columnas esperadas por el modelo
+            expected_columns = list(encoded_column_names) + list(numerical_column_names)
+            st.write("Las columnas esperadas por el modelo son:", expected_columns)
+
+            # Compara las columnas cargadas con las esperadas
+            loaded_columns = df.columns.tolist()
+            st.write("Las columnas cargadas desde el archivo Excel son:", loaded_columns)
+
+            missing_columns = [col for col in expected_columns if col not in loaded_columns]
+            extra_columns = [col for col in loaded_columns if col not in expected_columns]
+
+            if missing_columns:
+                st.write("Faltan las siguientes columnas en los datos cargados:", missing_columns)
+            if extra_columns:
+                st.write("Las siguientes columnas no deberían estar presentes:", extra_columns)
+
+            # Asegurarse de que las columnas estén en el mismo orden que las espera el modelo
+            df = df[expected_columns]  # Ajusta el DataFrame al orden de las columnas esperadas
+            st.write("Datos ajustados para la predicción:", df.head())
 
             # Asegurarse de que el dataframe tenga los datos necesarios.
             if not df.empty:
                 # Realizar la predicción utilizando el modelo de redes neuronales
                 prediction_probabilities = model2.predict(df)
-                
+
                 # Probabilidades de la clase 0 y 1
                 prob_normal = 1 - prediction_probabilities
                 prob_cath = prediction_probabilities
@@ -618,6 +639,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Cath")
             else:
                 st.write("Predicción del modelo: Normal")
+
 
         
 
