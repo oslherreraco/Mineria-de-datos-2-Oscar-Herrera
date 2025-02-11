@@ -691,7 +691,7 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         model1_params = model1.get_params()  # Extraer los hiperparámetros del modelo
 
         # Convertir los hiperparámetros a un formato adecuado para una tabla
-        model1_params_table = [(key, value) for key, value in model1_params.items()] 
+        model1_params_table = [(key, value) for key, value in model1_params.items()]
 
         # Limpiar los valores None o <NA> y reemplazarlos con un guion o valor vacío
         cleaned_model1_params = [
@@ -702,8 +702,9 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         # Mostrar los parámetros del modelo 1 como una tabla
         model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
 
-        # Establecer el ancho de las columnas para que se ajusten adecuadamente
-        model1_params_df.style.set_properties(subset=["Hiperparámetro", "Valor"], width="300px")
+        # Ajustar el ancho de las columnas para que no se corte el texto
+        model1_params_df.style.set_properties(subset=["Hiperparámetro", "Valor"], width="400px", 
+                                              min_width="200px", max_width="600px", text_align="left")
 
         # Mostrar la tabla con estilo
         st.dataframe(model1_params_df, use_container_width=True)
@@ -721,29 +722,19 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear un diccionario para almacenar los hiperparámetros de cada capa
-        layers_info = {}
+        # Crear DataFrame para mostrar en formato vertical
+        params_vertical = []
+        for layer in model2_params:
+            layer_name = layer["Capa"]
+            for param, value in layer["Hiperparámetros"].items():
+                params_vertical.append([layer_name, param, value])
 
-        for i, layer in enumerate(model2_params):
-            layer_name = f"Capa {i+1} ({layer['Capa']})"
-            layer_config = layer["Hiperparámetros"]
+        # Convertir la lista de hiperparámetros en un DataFrame
+        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
 
-            for param, value in layer_config.items():
-                if param not in layers_info:
-                    layers_info[param] = []
-                layers_info[param].append(value)
-
-        # Convertir el diccionario en un DataFrame con los hiperparámetros como filas
-        model2_params_df = pd.DataFrame(layers_info)
-
-        # Transponer la tabla para que las capas estén como columnas y los hiperparámetros como filas
-        model2_params_df = model2_params_df.transpose()
-
-        # Renombrar las columnas para reflejar el número de capa
-        model2_params_df.columns = [f"Capa {i+1}" for i in range(len(model2_params))]
-
-        # Establecer el ancho de las columnas para que se ajusten adecuadamente
-        model2_params_df.style.set_properties(subset=model2_params_df.columns, width="300px")
+        # Ajustar el ancho de las columnas y permitir que los valores largos no se corten
+        model2_params_df.style.set_properties(subset=["Capa", "Hiperparámetro", "Valor"], width="400px", 
+                                              min_width="200px", max_width="600px", text_align="left")
 
         # Mostrar la tabla con estilo
         st.dataframe(model2_params_df, use_container_width=True)
