@@ -678,11 +678,10 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 
 
 
-
 import pandas as pd
 import streamlit as st
 
-# Datos de hiperparámetros adicionales
+# Datos de hiperparámetros generales
 additional_params = {
     'Depth': 1,
     'Epochs': 11,
@@ -728,21 +727,32 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             model2_params.append(layer_info)
 
         # Crear un DataFrame para mostrar los hiperparámetros de las capas por columna
-        # Obtenemos los nombres de los parámetros y de las capas
+        # Obtenemos los nombres de las capas
         layer_names = [layer["Capa"] for layer in model2_params]
+        # Obtenemos todos los parámetros posibles en las capas
         param_names = list(set([param for layer in model2_params for param in layer["Hiperparámetros"].keys()]))
         
-        # Crear la tabla con una columna por capa
+        # Creamos la tabla con una columna por capa
         param_values = []
         for param_name in param_names:
             row = [param_name]  # Comenzamos con el nombre del parámetro
             for layer in model2_params:
                 layer_config = layer["Hiperparámetros"]
-                row.append(layer_config.get(param_name, "-"))  # Agregamos el valor de cada capa para este parámetro
+                value = layer_config.get(param_name, "-")
+                
+                # Convertir el valor a cadena en caso de que sea un diccionario o lista
+                if isinstance(value, (dict, list)):
+                    value = str(value)
+                row.append(value)  # Agregamos el valor de cada capa para este parámetro
             param_values.append(row)
 
         # Convertir a DataFrame
         model2_params_df = pd.DataFrame(param_values, columns=["Hiperparámetro"] + layer_names)
+
+        # Asegurarnos de que los valores numéricos se muestren con hasta 6 decimales
+        for col in model2_params_df.columns[1:]:
+            model2_params_df[col] = model2_params_df[col].apply(lambda x: f"{x:.6f}" if isinstance(x, (int, float)) else x)
+
         st.write("##### Parámetros por Capa de la Red Neuronal")
         st.dataframe(model2_params_df, use_container_width=True)
 
@@ -769,8 +779,6 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
 
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
-
-
 
 
 
