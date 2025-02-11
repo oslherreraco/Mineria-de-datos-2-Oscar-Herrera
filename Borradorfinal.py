@@ -727,17 +727,22 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear DataFrame para mostrar en formato vertical
-        params_vertical = []
-        for layer in model2_params:
-            layer_name = layer["Capa"]
-            for param, value in layer["Hiperparámetros"].items():
-                params_vertical.append([layer_name, param, value])
+        # Crear un DataFrame para mostrar los hiperparámetros de las capas por columna
+        # Obtenemos los nombres de los parámetros y de las capas
+        layer_names = [layer["Capa"] for layer in model2_params]
+        param_names = list(set([param for layer in model2_params for param in layer["Hiperparámetros"].keys()]))
+        
+        # Crear la tabla con una columna por capa
+        param_values = []
+        for param_name in param_names:
+            row = [param_name]  # Comenzamos con el nombre del parámetro
+            for layer in model2_params:
+                layer_config = layer["Hiperparámetros"]
+                row.append(layer_config.get(param_name, "-"))  # Agregamos el valor de cada capa para este parámetro
+            param_values.append(row)
 
-        # Convertir la lista de hiperparámetros en un DataFrame
-        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
-
-        # Mostrar la tabla de los parámetros de las capas
+        # Convertir a DataFrame
+        model2_params_df = pd.DataFrame(param_values, columns=["Hiperparámetro"] + layer_names)
         st.write("##### Parámetros por Capa de la Red Neuronal")
         st.dataframe(model2_params_df, use_container_width=True)
 
@@ -755,12 +760,16 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         # Crear un DataFrame para los parámetros generales
         additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
 
+        # Ajustar los decimales de los valores para que se muestren con hasta 6 decimales
+        additional_params_df["Valor"] = additional_params_df["Valor"].apply(lambda x: f"{x:.6f}" if isinstance(x, (float, int)) else x)
+
         # Mostrar la tabla de los parámetros generales
         st.write("##### Parámetros Generales del Modelo")
         st.dataframe(additional_params_df, use_container_width=True)
 
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
+
 
 
 
