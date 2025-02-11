@@ -681,78 +681,41 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
 import pandas as pd
 import streamlit as st
 
-# Colocar el checkbox en la barra lateral
-if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
-    st.write("#### Hiperparámetros del modelo")
+# Supongamos que model2 es tu modelo de red neuronal de Keras
+if hasattr(model2, 'get_config'):
+    st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
     
-    # Mostrar los hiperparámetros del modelo 1 (modelo de sklearn)
-    if hasattr(model1, 'get_params'):
-        st.write("##### Hiperparámetros del modelo de clasificación (sklearn)")
+    # Obtener la configuración de la red neuronal
+    model2_config = model2.get_config()
 
-        model1_params = model1.get_params()  # Extraer los hiperparámetros del modelo
+    # Almacenar la información de cada capa
+    layers_info = []
 
-        # Convertir los hiperparámetros a un formato adecuado para una tabla
-        model1_params_table = [(key, value) for key, value in model1_params.items()]
+    # Recorrer las capas del modelo y extraer los hiperparámetros
+    for i, layer in enumerate(model2.layers):
+        layer_info = {
+            "Capa": f"Capa {i+1} ({layer.__class__.__name__})",
+        }
 
-        # Limpiar los valores None o <NA> y reemplazarlos con un guion o valor vacío
-        cleaned_model1_params = [
-            (key, value if value is not None and value != "<NA>" else "-") 
-            for key, value in model1_params_table
-        ]
+        # Extraer configuración de cada capa
+        layer_config = layer.get_config()
+        for param, value in layer_config.items():
+            layer_info[param] = value
+        
+        # Añadir la información de la capa
+        layers_info.append(layer_info)
 
-        # Mostrar los parámetros del modelo 1 como una tabla
-        model1_params_df = pd.DataFrame(cleaned_model1_params, columns=["Hiperparámetro", "Valor"])
+    # Convertir la información en un DataFrame de Pandas
+    model2_params_df = pd.DataFrame(layers_info)
 
-        # Establecer el ancho de las columnas para que se ajusten adecuadamente
-        model1_params_df.style.set_properties(subset=["Hiperparámetro", "Valor"], width="300px")
+    # Mostrar la tabla con la configuración de las capas
+    st.dataframe(model2_params_df)
 
-        # Mostrar la tabla con estilo
-        st.dataframe(model1_params_df, use_container_width=True)
-
-    # Mostrar los hiperparámetros del modelo 2 (modelo de red neuronal)
-    if hasattr(model2, 'get_config'):
-        st.write("##### Hiperparámetros del modelo de red neuronal (TensorFlow/Keras)")
-
-        # Obtener los hiperparámetros de la red neuronal
-        model2_params = []
-        for layer in model2.layers:
-            layer_info = {
-                "Capa": layer.__class__.__name__,  # Nombre de la capa (ej. Dense, Conv2D)
-                "Hiperparámetros": layer.get_config()  # Obtiene la configuración de la capa
-            }
-            model2_params.append(layer_info)
-
-        # Crear DataFrame para mostrar en formato vertical
-        params_vertical = []
-        for layer in model2_params:
-            layer_name = layer["Capa"]
-            for param, value in layer["Hiperparámetros"].items():
-                params_vertical.append([layer_name, param, value])
-
-        # Convertir la lista de hiperparámetros en un DataFrame
-        model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
-
-        # Establecer el ancho de las columnas para que se ajusten adecuadamente
-        model2_params_df.style.set_properties(subset=["Capa", "Hiperparámetro", "Valor"], width="300px")
-
-        # Mostrar la tabla con estilo
-        st.dataframe(model2_params_df, use_container_width=True)
-
-        # Obtener el learning rate
-        if hasattr(model2, 'optimizer'):
-            optimizer = model2.optimizer
-            if hasattr(optimizer, 'lr'):  # Para versiones más antiguas de Keras
-                learning_rate = optimizer.lr.numpy()
-            elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
-                learning_rate = optimizer.learning_rate.numpy()
-
-            st.write(f"##### Learning Rate: {learning_rate}")
-
-        # Información adicional sobre las épocas, batch_size y otros parámetros de entrenamiento
-        st.write("##### Información adicional:")
-        st.write("Las épocas, el tamaño del batch y otros parámetros de entrenamiento no se almacenan directamente en el modelo. Es necesario que estos valores sean proporcionados de manera explícita.")
-    else:
-        st.write("El modelo no tiene el método get_config() disponible.")
+    # Asegurarse de que todas las columnas tengan un ancho adecuado para mostrar la información completa
+    st.write("#### Ajustando el ancho de las columnas para mostrar todos los valores")
+    st.write("""
+        Puedes ajustar el ancho de las columnas en la tabla para asegurarte de que la información no se corte.
+    """)
 
 
 
