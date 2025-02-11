@@ -737,17 +737,9 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
         # Convertir la lista de hiperparámetros en un DataFrame
         model2_params_df = pd.DataFrame(params_vertical, columns=["Capa", "Hiperparámetro", "Valor"])
 
-        # Convertir los datos adicionales a un DataFrame
-        additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
-        
-        # Añadir los parámetros adicionales a la tabla de parámetros de la red neuronal
-        additional_params_df['Capa'] = 'Red Neuronal'  # Colocar un valor para la columna 'Capa' en los parámetros adicionales
-
-        # Concatenar las tablas de parámetros de las capas y los parámetros adicionales
-        final_df = pd.concat([model2_params_df, additional_params_df], ignore_index=True)
-
-        # Mostrar la tabla con los hiperparámetros
-        st.dataframe(final_df, use_container_width=True)
+        # Mostrar la tabla de los parámetros de las capas
+        st.write("##### Parámetros por Capa de la Red Neuronal")
+        st.dataframe(model2_params_df, use_container_width=True)
 
         # Obtener el learning rate
         if hasattr(model2, 'optimizer'):
@@ -757,7 +749,15 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
                 learning_rate = optimizer.learning_rate.numpy()
 
-            st.write(f"##### Learning Rate: {learning_rate}")
+        # Agregar el learning rate a los parámetros generales
+        additional_params['Learning Rate'] = learning_rate
+
+        # Crear un DataFrame para los parámetros generales
+        additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
+
+        # Mostrar la tabla de los parámetros generales
+        st.write("##### Parámetros Generales del Modelo")
+        st.dataframe(additional_params_df, use_container_width=True)
 
     else:
         st.write("El modelo no tiene el método get_config() disponible.")
