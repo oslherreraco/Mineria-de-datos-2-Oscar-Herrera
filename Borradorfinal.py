@@ -677,9 +677,6 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Normal")
 
 
-
-
-
 import pandas as pd
 import streamlit as st
 
@@ -724,7 +721,7 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             }
             model2_params.append(layer_info)
 
-        # Crear un DataFrame con las capas como columnas
+        # Crear un diccionario para almacenar los hiperparámetros de cada capa
         layers_info = {}
 
         for i, layer in enumerate(model2_params):
@@ -736,8 +733,14 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
                     layers_info[param] = []
                 layers_info[param].append(value)
 
-        # Convertir el diccionario en un DataFrame
+        # Convertir el diccionario en un DataFrame con los hiperparámetros como filas
         model2_params_df = pd.DataFrame(layers_info)
+
+        # Transponer la tabla para que las capas estén como columnas y los hiperparámetros como filas
+        model2_params_df = model2_params_df.transpose()
+
+        # Renombrar las columnas para reflejar el número de capa
+        model2_params_df.columns = [f"Capa {i+1}" for i in range(len(model2_params))]
 
         # Establecer el ancho de las columnas para que se ajusten adecuadamente
         model2_params_df.style.set_properties(subset=model2_params_df.columns, width="300px")
