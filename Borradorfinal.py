@@ -765,15 +765,22 @@ if st.sidebar.checkbox("Mostrar hiperparámetros del modelo"):
             elif hasattr(optimizer, 'learning_rate'):  # Para versiones más recientes de TensorFlow
                 learning_rate = optimizer.learning_rate.numpy()
 
-      
-       # Agregar el learning rate a los parámetros generales
+        # Agregar el learning rate a los parámetros generales
         additional_params['Learning Rate'] = learning_rate
 
         # Crear un DataFrame para los parámetros generales
         additional_params_df = pd.DataFrame(list(additional_params.items()), columns=["Hiperparámetro", "Valor"])
 
         # Ajustar los decimales de los valores para que se muestren con hasta 6 decimales
-        additional_params_df["Valor"] = additional_params_df["Valor"].apply(lambda x: f"{x:.6f}" if isinstance(x, (float, int)) else x)
+        def format_value(value):
+            if isinstance(value, (float, int)):
+                # Si el valor tiene decimales, mostrarlo con 6 decimales, de lo contrario, mostrarlo como entero
+                if value.is_integer():
+                    return f"{int(value)}"  # Mostrar como entero si no tiene decimales
+                return f"{value:.6f}"  # Mostrar con 6 decimales
+            return value  # Para valores no numéricos, devolver tal cual
+
+        additional_params_df["Valor"] = additional_params_df["Valor"].apply(format_value)
 
         # Mostrar la tabla de los parámetros generales
         st.write("##### Parámetros Generales del Modelo")
