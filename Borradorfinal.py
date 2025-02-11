@@ -394,8 +394,11 @@ if st.sidebar.checkbox("Escalado de datos"):
         st.dataframe(scaled_data.head())
 
 
-#Modelo Clasico
+
 import pandas as pd
+import streamlit as st
+
+# Asumimos que ya tienes una función load_encoder() definida para cargar el codificador OneHot y las columnas numéricas.
 
 if st.sidebar.checkbox("Utilizar arboles de decisión"):
     st.write("### Arboles de decisión")
@@ -420,7 +423,7 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
             st.write("### Datos cargados del archivo Excel:")
             st.write(df_excel.head())
 
-            # Pedir al usuario que seleccione la fila (podría ser por índice o número de fila)
+            # Pedir al usuario que seleccione la fila (puede ser por índice o número de fila)
             row_number = st.number_input("Selecciona el número de fila para la predicción", min_value=0, max_value=len(df_excel)-1, value=0)
 
             # Seleccionar la fila correspondiente
@@ -449,13 +452,44 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
             # Realizar la predicción
             prediction = model1.predict(final_data)
 
+            # Mostrar predicción para una sola fila
             if prediction == 1:
                 st.write("Predicción del modelo:","Cath", prediction)
             else:
                 st.write("Predicción del modelo:","Normal", prediction)
 
+    if selected_column == 'Cargar desde Excel' and uploaded_file is not None:
+        # Si se cargaron varias filas, procesarlas todas.
+        st.write("### Realizando predicciones para todas las filas del archivo cargado:")
 
-    if selected_column=='Manual':             
+        # Preparar los datos para todas las filas de manera similar
+        encoder, numerical_columns = load_encoder()
+
+        # Codificar todas las filas de datos
+        new_data_categorical = df_excel[encoder.feature_names_in_]  # Mantener solo las variables categóricas
+        new_data_numerical = df_excel[numerical_columns]  # Mantener solo las variables numéricas
+
+        # Codificar las variables categóricas
+        encoded_array = encoder.transform(new_data_categorical)
+
+        # Convertir la salida a DataFrame con nombres de columnas codificadas
+        encoded_df = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out())
+
+        # Concatenar las variables numéricas con las categóricas codificadas
+        final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
+
+        # Realizar las predicciones para todas las filas
+        predictions = model1.predict(final_data)
+
+        # Mostrar las predicciones para todas las filas cargadas
+        df_predictions = df_excel.copy()
+        df_predictions['Predicción'] = predictions
+        df_predictions['Predicción'] = df_predictions['Predicción'].apply(lambda x: "Cath" if x == 1 else "Normal")
+
+        st.write("### Predicciones para todas las filas:")
+        st.write(df_predictions)
+
+    if selected_column == 'Manual':             
         # Crear DataFrame inicial con valores numéricos en 0 y categóricos con el primer valor de la lista
         data = {col: [0.0] for col in column_names}  # Inicializar numéricos en 0
         for col in categorical_columns:
@@ -499,12 +533,11 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
             # Concatenar las variables numéricas con las categóricas codificadas
             final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
     
-            prediction=model1.predict(final_data)
-            if prediction==1:
-                st.write("Predicción del modelo:","Cath", prediction)
+            prediction = model1.predict(final_data)
+            if prediction == 1:
+                st.write("Predicción del modelo:", "Cath", prediction)
             else:
-                st.write("Predicción del modelo:","Normal", prediction)
-                
+                st.write("Predicción del modelo:", "Normal", prediction)
 
 
 from sklearn.preprocessing import StandardScaler
