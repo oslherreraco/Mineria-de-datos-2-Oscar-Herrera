@@ -507,6 +507,8 @@ if st.sidebar.checkbox("Utilizar arboles de decisión"):
                 
 
 
+from sklearn.preprocessing import StandardScaler
+
 if st.sidebar.checkbox("Utilizar redes Neuronales"): 
     st.write("### Redes Neuronales")
            
@@ -568,14 +570,19 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             numerical_columns_in_data = list(set(numerical_columns) & set(loaded_columns))  # Filtra las columnas numéricas presentes
             numerical_data = df[numerical_columns_in_data]
             
-            # Paso 3: Concatenar las columnas numéricas con las columnas categóricas codificadas
-            final_data = pd.concat([numerical_data, encoded_df], axis=1)
+            # Paso 3: Escalar las columnas numéricas (estandarización)
+            scaler = StandardScaler()
+            numerical_data_scaled = scaler.fit_transform(numerical_data)
+            numerical_data_scaled = pd.DataFrame(numerical_data_scaled, columns=numerical_columns_in_data)
+            
+            # Paso 4: Concatenar las columnas numéricas escaladas con las columnas categóricas codificadas
+            final_data = pd.concat([numerical_data_scaled, encoded_df], axis=1)
 
-            # Paso 4: Asegurarse de que el DataFrame tenga las columnas en el orden esperado
+            # Paso 5: Asegurarse de que el DataFrame tenga las columnas en el orden esperado
             final_data = final_data[expected_columns]  # Ajustar al orden de las columnas esperadas por el modelo
             st.write("Datos ajustados para la predicción:", final_data.head())
 
-            # Paso 5: Realizar la predicción
+            # Paso 6: Realizar la predicción
             if not final_data.empty:
                 prediction_probabilities = model2.predict(final_data)
 
@@ -639,9 +646,16 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
             # Convertir la salida a DataFrame con nombres de columnas codificadas
             encoded_df = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out())
             
-            # Concatenar las variables numéricas con las categóricas codificadas
-            final_data = pd.concat([new_data_numerical, encoded_df], axis=1)
-    
+            # Escalar las columnas numéricas
+            numerical_data_scaled = scaler.transform(new_data_numerical)  # Usamos el mismo scaler entrenado
+            numerical_data_scaled = pd.DataFrame(numerical_data_scaled, columns=numerical_columns)
+            
+            # Concatenar las variables numéricas escaladas con las categóricas codificadas
+            final_data = pd.concat([numerical_data_scaled, encoded_df], axis=1)
+
+            # Asegurarse de que las columnas estén en el orden correcto
+            final_data = final_data[expected_columns]  # Reordenar para que coincidan con las columnas esperadas
+            
             # Realizar la predicción
             prediction_probabilities = model2.predict(final_data)
             
@@ -661,6 +675,7 @@ if st.sidebar.checkbox("Utilizar redes Neuronales"):
                 st.write("Predicción del modelo: Cath")
             else:
                 st.write("Predicción del modelo: Normal")
+
 
 
 
